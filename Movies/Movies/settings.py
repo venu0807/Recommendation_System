@@ -99,6 +99,18 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
 ]
 
+
+REST_FRAMEWORK = {
+
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+}
+
+
 ROOT_URLCONF = 'Movies.urls'
 
 TEMPLATES = [
@@ -160,7 +172,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
@@ -181,5 +193,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 
 
-TMDB_API_KEY = '6da4820317d33534a06857afa857c76b'
+TMDB_API_KEY = '57b5f1654695efb88db0e9b69b632b82'
 TMDB_API_URL = 'https://api.themoviedb.org/3'
+
+

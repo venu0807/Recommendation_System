@@ -2,30 +2,37 @@ from rest_framework import serializers
 from django.db.models import Q, Avg
 from .models import *
 
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfileModel
+        fields = ['preferred_genres', 'preferred_actors']  # Include the fields you want to expose
 
-class CastSerializer(serializers.ModelSerializer):
-    tmdb_url = serializers.SerializerMethodField()
+    def update(self, instance, validated_data):
+        """Override the update method to handle the update of user preferences."""
+        
+        instance.preferred_genres = validated_data.get('preferred_genres', instance.preferred_genres)
+        instance.preferred_actors = validated_data.get('preferred_actors', instance.preferred_actors)
+        instance.save()
+        return instance
+
+
+class PersonSerializer(serializers.ModelSerializer):
 
     class Meta:
-        model = CastModel
+        model = PersonModel
         fields = '__all__'
 
-    def get_tmdb_url(self, obj):
-        """Return the TMDB profile URL for the cast."""
-        return f"https://www.themoviedb.org/person/{obj.tmdb_id}"
 
 
-class CrewSerializer(serializers.ModelSerializer):
-    tmdb_url = serializers.SerializerMethodField()
-
+class MovieCastSerializer(serializers.ModelSerializer):
     class Meta:
-        model = CrewModel
+        model = MovieCastModel
         fields = '__all__'
 
-    def get_tmdb_url(self, obj):
-        """Return the TMDB profile URL for the crew."""
-        return f"https://www.themoviedb.org/person/{obj.tmdb_id}"
-
+class MovieCrewSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MovieCrewModel
+        fields = '__all__'
 
 class GenreSerializer(serializers.ModelSerializer):
     tmdb_url = serializers.SerializerMethodField()
@@ -62,9 +69,12 @@ class ProductionCompanySerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class MovieSerializer(serializers.ModelSerializer):
-    cast = CastSerializer(many=True, read_only=True)
-    crew = CrewSerializer(many=True, read_only=True)
     genres = GenreSerializer(many=True, read_only=True)
+    cast = MovieCastSerializer(many=True, read_only=True)
+    crew = MovieCrewSerializer(many=True, read_only=True)
+    recommendation_source = serializers.CharField(required=False)
+    match_score = serializers.IntegerField(required=False)
+    similarity_score = serializers.FloatField(required=False)
     keyword = KeywordSerializer(many=True, read_only=True)
     productioncompany = ProductionCompanySerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
@@ -88,26 +98,6 @@ class MovieSerializer(serializers.ModelSerializer):
         return f"https://www.imdb.com/title/{obj.keywords.get('imdb_id')}" if obj.keywords.get('imdb_id') else None
 
 
-class MoviesByCastSerializer(serializers.ModelSerializer):
-    cast = CastSerializer(many=True)
-
-    class Meta:
-        model = MovieModel
-        fields = '__all__'
-
-    @staticmethod
-    def get_movies_by_cast(cast_id):
-        return MovieModel.objects.filter(cast__id=cast_id)
-
-
-class MovieRecommendationSerializer(serializers.ModelSerializer):
-    genres = GenreSerializer(many=True)
-    cast = CastSerializer(many=True)
-
-    class Meta:
-        model = MovieModel
-        fields = '__all__'
-
 
 class RatingSerializer(serializers.ModelSerializer):
     user = serializers.StringRelatedField()  # Display username
@@ -116,6 +106,21 @@ class RatingSerializer(serializers.ModelSerializer):
     class Meta:
         model = RatingModel
         fields = '__all__'
+
+    def create(self, validated_data):
+        # Ensure the rating is saved or updated for the logged-in user
+        user = validated_data['user']
+        movie = validated_data['movie']
+        rating = validated_data['rating']
+
+        # Check if the user already rated this movie
+        existing_rating = RatingModel.objects.filter(user=user, movie=movie).first()
+        if existing_rating:
+            existing_rating.rating = rating
+            existing_rating.save()
+            return existing_rating
+        else:
+            return RatingModel.objects.create(user=user, movie=movie, rating=rating)
 
 
 class WatchlistSerializer(serializers.ModelSerializer):
@@ -132,3 +137,5 @@ class FavoriteMoviesSerializer(serializers.ModelSerializer):
     class Meta:
         model = FavoriteMoviesModel
         fields = '__all__'
+
+

@@ -6,6 +6,5 @@ class UsersConfig(AppConfig):
     name = 'Users'
 
     def ready(self):
-        # Import the function you want to run
-        from .utils import fetch_movies  # Adjust the import based on your project structure
-        fetch_movies()  # Call the function
+        from .utils import fetch_movies 
+        fetch_movies()
