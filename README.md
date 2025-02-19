@@ -53,15 +53,30 @@ venv\Scripts\activate     # Windows
 pip install -r requirements.txt
 ```
 
-3. Configure MySQL database settings in settings.py
+3. Start Django project:
+```bash
+django-admin startproject Movies
+```
+4. Navigate to the directory:
+```bash
+cd Movies
+```
 
-4. Run migrations:
+5. Start App:
+```bash
+python manage.py startapp Users
+```
+
+
+6. Configure MySQL database settings in settings.py
+
+7. Run migrations:
 ```bash
 python manage.py makemigrations
 python manage.py migrate
 ```
 
-5. Start the Django server:
+8. Start the Django server:
 ```bash
 python manage.py runserver
 ```
