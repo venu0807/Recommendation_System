@@ -25,7 +25,7 @@ A sophisticated movie recommendation system built with React, Django Rest Framew
 - Context API for State Management
 - React Router for Navigation
 - CSS Modules for Styling
-- Axios for API Calls
+- Fetch for API Calls
 
 ### Backend
 - Django Rest Framework (DRF)
