@@ -1,4 +1,4 @@
-# recommendation_system# Movie Recommendation System
+# Movie Recommendation System
 
 A sophisticated movie recommendation system built with React, Django Rest Framework (DRF), MySQL, and Python. The system provides personalized movie recommendations using hybrid filtering techniques.
 
