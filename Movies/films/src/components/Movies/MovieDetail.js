@@ -311,7 +311,7 @@ export default function MovieDetail() {
                     className="ml-5 mr-5"
                     onClick={() => handlePlayVideo(movie.teaser_link)}
                   >
-                    <PlayArrowRoundedIcon></PlayArrowRoundedIcon>Watch Trailer
+                    <PlayArrowRoundedIcon></PlayArrowRoundedIcon>Watch Teaser
                   </h6>
                 ) : (
                   <></>
