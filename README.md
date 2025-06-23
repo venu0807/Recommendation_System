@@ -2,7 +2,7 @@
 
 **➡️ Live Demo: [https://venu0807.github.io/Recommendation_System/](https://venu0807.github.io/Recommendation_System/)**
 
-Go to Popular Movies , Some movies are displyed
+Go to Popular Movies , Some movies are displayed
 
 
 A sophisticated movie recommendation system built with React, Django Rest Framework (DRF), MySQL, and Python. The system provides personalized movie recommendations using hybrid filtering techniques.
