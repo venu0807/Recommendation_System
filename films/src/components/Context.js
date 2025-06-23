@@ -250,7 +250,18 @@ export const UserProvider = ({ children }) => {
     },
   ];
 
+  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+
   const fetchData = async () => {
+    if (!isLocalhost) {
+      setMovies(staticMovies);
+      setUpcomingMovies(staticMovies);
+      setNowplayingMovies(staticMovies);
+      setTrendingMovies(staticMovies);
+      setTopratedMovies(staticMovies);
+      setLoading(false);
+      return;
+    }
     try {
       const [
         moviesResponse,
