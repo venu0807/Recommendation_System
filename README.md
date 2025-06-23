@@ -1,5 +1,7 @@
 # Movie Recommendation System
 
+**➡️ Live Demo: [https://venu0807.github.io/Recommendation_System/](https://venu0807.github.io/Recommendation_System/)**
+
 A sophisticated movie recommendation system built with React, Django Rest Framework (DRF), MySQL, and Python. The system provides personalized movie recommendations using hybrid filtering techniques.
 
 ## Features
