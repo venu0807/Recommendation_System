@@ -169,6 +169,87 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // Static fallback movie list for live demo
+  const staticMovies = [
+    {
+      id: 1,
+      title: "Inception",
+      poster_path: "/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
+      release_date: "2010-07-16",
+      popularity: 80,
+    },
+    {
+      id: 2,
+      title: "The Dark Knight",
+      poster_path: "/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+      release_date: "2008-07-18",
+      popularity: 90,
+    },
+    {
+      id: 3,
+      title: "Interstellar",
+      poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
+      release_date: "2014-11-07",
+      popularity: 85,
+    },
+    {
+      id: 4,
+      title: "The Matrix",
+      poster_path: "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
+      release_date: "1999-03-31",
+      popularity: 75,
+    },
+    {
+      id: 5,
+      title: "Pulp Fiction",
+      poster_path: "/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg",
+      release_date: "1994-10-14",
+      popularity: 70,
+    },
+    {
+      id: 6,
+      title: "Fight Club",
+      poster_path: "/a26cQPRhJPX6GbWfQbvZdrrp9j9.jpg",
+      release_date: "1999-10-15",
+      popularity: 65,
+    },
+    {
+      id: 7,
+      title: "Forrest Gump",
+      poster_path: "/clolk7rB5lAjs41SD0Vt6IXYLMm.jpg",
+      release_date: "1994-07-06",
+      popularity: 60,
+    },
+    {
+      id: 8,
+      title: "The Shawshank Redemption",
+      poster_path: "/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
+      release_date: "1994-09-23",
+      popularity: 95,
+    },
+    {
+      id: 9,
+      title: "The Godfather",
+      poster_path: "/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
+      release_date: "1972-03-24",
+      popularity: 88,
+    },
+    {
+      id: 10,
+      title: "The Lord of the Rings: The Fellowship of the Ring",
+      poster_path: "/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
+      release_date: "2001-12-19",
+      popularity: 78,
+    },
+    {
+      id: 11,
+      title: "Avengers: Endgame",
+      poster_path: "/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
+      release_date: "2019-04-26",
+      popularity: 99,
+    },
+  ];
+
   const fetchData = async () => {
     try {
       const [
@@ -186,27 +267,30 @@ export const UserProvider = ({ children }) => {
       ]);
 
       // Handle responses and set state
-      if (moviesResponse.status === "fulfilled") {
+      if (moviesResponse.status === "fulfilled" && moviesResponse.value.ok) {
         const data = await moviesResponse.value.json();
         setMovies(data);
+      } else {
+        setMovies(staticMovies); // fallback for demo
       }
-      if (upcomingResponse.status === "fulfilled") {
+      if (upcomingResponse.status === "fulfilled" && upcomingResponse.value.ok) {
         const data = await upcomingResponse.value.json();
         setUpcomingMovies(data);
       }
-      if (nowPlayingResponse.status === "fulfilled") {
+      if (nowPlayingResponse.status === "fulfilled" && nowPlayingResponse.value.ok) {
         const data = await nowPlayingResponse.value.json();
         setNowplayingMovies(data);
       }
-      if (trendingResponse.status === "fulfilled") {
+      if (trendingResponse.status === "fulfilled" && trendingResponse.value.ok) {
         const data = await trendingResponse.value.json();
         setTrendingMovies(data);
       }
-      if (topRatedResponse.status === "fulfilled") {
+      if (topRatedResponse.status === "fulfilled" && topRatedResponse.value.ok) {
         const data = await topRatedResponse.value.json();
         setTopratedMovies(data);
       }
     } catch (error) {
+      setMovies(staticMovies); // fallback for demo
       console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
