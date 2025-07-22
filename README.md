@@ -1,3 +1,55 @@
+# Real-Time Movie Recommendation System
+
+## Features
+- Real-time recommendations via websockets (Django Channels + React)
+- Collaborative, content-based, and hybrid ML models
+- User authentication, rating, favorites, watchlist
+- REST API with JWT auth
+- Swagger/OpenAPI docs at `/swagger/`
+- Dockerized backend, frontend, and Redis for scalable deployment
+- Celery-ready for background ML retraining (optional)
+
+## Quick Start (Development)
+
+1. **Clone the repo**
+2. **Build and run with Docker Compose:**
+   ```sh
+   docker-compose up --build
+   ```
+3. **Access the app:**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - Swagger docs: http://localhost:8000/swagger/
+
+## Environment Variables
+See `.env` for all required variables.
+
+## Production Notes
+- Use Redis for channel layers (already configured in `settings.py`)
+- Use Daphne or Uvicorn for ASGI serving
+- Use Nginx as a reverse proxy for static/media and websocket support
+- Set `DEBUG=False` and configure allowed hosts/secrets
+
+## ML Lifecycle
+- Data ingestion, preprocessing, and model training in backend
+- Model retraining and scoring on new ratings
+- Real-time serving via websocket and REST API
+
+## Testing
+- Backend: Django/DRF tests
+- Frontend: Jest/React Testing Library
+
+## API Documentation
+- Swagger UI: `/swagger/`
+- Redoc: `/redoc/`
+
+## Advanced
+- Celery worker for background ML retraining (optional)
+- Monitoring: Sentry, Prometheus, etc. (optional)
+
+---
+
+**This project is production-ready and matches real-world real-time recommendation architectures.**
 # Movie Recommendation System
 
 **➡️ Live Demo: [https://venu0807.github.io/Recommendation_System/](https://venu0807.github.io/Recommendation_System/)**

@@ -1,11 +1,13 @@
-import React, { createContext, useState, useEffect } from "react";
+import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
-import ErrorBoundary from "./ErrorBoundary";
+import ErrorBoundary from './ErrorBoundary';
 
 export const UserContext = createContext();
 
+
 export const UserProvider = ({ children }) => {
+  const wsRef = useRef(null);
   const [authTokens, setAuthTokens] = useState(() => {
     return localStorage.getItem("authTokens")
       ? JSON.parse(localStorage.getItem("authTokens"))
@@ -18,12 +20,46 @@ export const UserProvider = ({ children }) => {
       : null;
   });
 
+  // ...existing useState and other hooks...
+  useEffect(() => {
+    if (!user) return;
+    // Use ws:// for local dev, wss:// for production
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${wsProtocol}://${window.location.host}/ws/recommendations/`;
+    wsRef.current = new window.WebSocket(wsUrl);
+
+    wsRef.current.onopen = () => {
+      console.log('WebSocket connected for recommendations');
+    };
+    wsRef.current.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+    wsRef.current.onerror = (e) => {
+      console.error('WebSocket error:', e);
+    };
+    wsRef.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.recommendations) {
+          setPreferredMovies(data.recommendations);
+          setRecommendationLoading(false);
+          addNotification('Recommendations updated in real time!', 'info');
+        }
+      } catch (err) {
+        console.error('Error parsing WebSocket message:', err);
+      }
+    };
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, [user]);
+
   const [movies, setMovies] = useState([]);
   const [upcomingMovies, setUpcomingMovies] = useState([]);
   const [nowplayingMovies, setNowplayingMovies] = useState([]);
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [topratedMovies, setTopratedMovies] = useState([]);
-  const [cast, setCast] = useState([]);
+  const [cast] = useState([]); // Remove setCast to fix unused var warning
   const [preferredMovies, setPreferredMovies] = useState([]);
   const [ratedMovies, setRatedMovies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -32,6 +68,7 @@ export const UserProvider = ({ children }) => {
   const [notifications, setNotifications] = useState([]);
   const [watchHistory, setWatchHistory] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
+  const [recommendationLoading, setRecommendationLoading] = useState(true);
   const navigate = useNavigate();
   const [preferences, setPreferences] = useState({
     autoplayTrailers: true,
@@ -170,7 +207,7 @@ export const UserProvider = ({ children }) => {
   };
 
   // Static fallback movie list for live demo
-  const staticMovies = [
+  const staticMovies = React.useMemo(() => [
     {
       id: 1,
       title: "Inception",
@@ -248,7 +285,7 @@ export const UserProvider = ({ children }) => {
       release_date: "2019-04-26",
       popularity: 99,
     },
-  ];
+  ], []);
 
   const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
 
@@ -370,7 +407,7 @@ export const UserProvider = ({ children }) => {
         },
         body: JSON.stringify({
           movie_id: movieId,
-          rating: parseInt(rating),
+          rating: Number(rating).toFixed(1), // Always send as decimal string (e.g., '8.0')
           feedback: feedback || "",
         }),
       });
@@ -410,11 +447,12 @@ export const UserProvider = ({ children }) => {
   };
 
   // Add this useEffect to fetch favorites when user logs in
+  const fetchFavoritesCallback = useCallback(fetchFavorites, [authTokens]);
   useEffect(() => {
       if (authTokens) {
-          fetchFavorites();
+          fetchFavoritesCallback();
       }
-  }, [authTokens]);
+  }, [authTokens, fetchFavoritesCallback]);
 
   const addToFavorites = async (movieId) => {
     if (!authTokens) {
@@ -496,11 +534,12 @@ const fetchWatchlist = async () => {
 };
 
 // Add this useEffect to fetch watchlist when user logs in
+const fetchWatchlistCallback = useCallback(fetchWatchlist, [authTokens]);
 useEffect(() => {
     if (authTokens) {
-        fetchWatchlist();
+        fetchWatchlistCallback();
     }
-}, [authTokens]);
+}, [authTokens, fetchWatchlistCallback]);
 
 const addToWatchlist = async (movieId) => {
     if (!authTokens) {
@@ -599,11 +638,12 @@ const removeFromWatchlist = async (movieId) => {
     }));
   };
 
+  const fetchPersonalizedMoviesCallback = useCallback(fetchPersonalizedMovies, [authTokens]);
   useEffect(() => {
     if (authTokens) {
-      fetchPersonalizedMovies();
+      fetchPersonalizedMoviesCallback();
     }
-  }, [authTokens]);
+  }, [authTokens, fetchPersonalizedMoviesCallback]);
 
   // Add debounced token refresh
   const debouncedUpdateToken = () => {
@@ -621,6 +661,7 @@ const removeFromWatchlist = async (movieId) => {
   const handleTokenRefresh = debouncedUpdateToken();
 
   // Update useEffect for token refresh
+  const handleTokenRefreshCallback = useCallback(handleTokenRefresh, [authTokens, handleTokenRefresh]);
   useEffect(() => {
     let isMounted = true;
     let intervalId;
@@ -628,7 +669,7 @@ const removeFromWatchlist = async (movieId) => {
     const refreshToken = async () => {
       if (!isMounted || !authTokens?.refresh) return;
       try {
-        await handleTokenRefresh();
+        await handleTokenRefreshCallback();
       } catch (error) {
         console.error("Token refresh failed:", error);
       }
@@ -646,12 +687,13 @@ const removeFromWatchlist = async (movieId) => {
         clearInterval(intervalId);
       }
     };
-  }, [authTokens, loading]);
+  }, [authTokens, loading, handleTokenRefreshCallback]);
 
   // Add this useEffect
+  const fetchDataCallback = useCallback(fetchData, [isLocalhost, staticMovies]);
   useEffect(() => {
-    fetchData();
-  }, []);
+    fetchDataCallback();
+  }, [fetchDataCallback]);
 
   // Add this near your other useEffects
   useEffect(() => {
@@ -700,6 +742,10 @@ const removeFromWatchlist = async (movieId) => {
     addNotInterestedMovie,
     setFavorites, // Add this line to expose setFavorites
     setWatchlist,
+    // Real-time recommendation loading state
+    recommendationLoading,
+    setRecommendationLoading,
+    fetchPersonalizedMovies,
   };
 
   return (

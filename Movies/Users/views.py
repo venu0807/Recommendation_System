@@ -322,18 +322,49 @@ class MovieViewSet(viewsets.ModelViewSet):
     
     @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
     def rate(self, request):
+
         user = request.user
         movie_id = request.data.get('movie_id')
         rating = request.data.get('rating')
         feedback = request.data.get('feedback', '')
 
         movie = get_object_or_404(MovieModel, id=movie_id)
+
+        # Ensure rating is a Decimal
+        from decimal import Decimal, InvalidOperation
+        try:
+            rating_decimal = Decimal(str(rating))
+        except (InvalidOperation, TypeError, ValueError):
+            return Response({'detail': 'Invalid rating value'}, status=status.HTTP_400_BAD_REQUEST)
+
         rating_obj, created = RatingModel.objects.update_or_create(
             user=user, movie=movie,
-            defaults={'rating': rating, 'feedback': feedback}
+            defaults={'rating': rating_decimal, 'feedback': feedback}
         )
 
         logger.info(f"User  {user.username} rated movie {movie.title} with rating {rating}.")
+
+        # --- Real-time recommendations via Django Channels ---
+        try:
+            from channels.layers import get_channel_layer
+            from asgiref.sync import async_to_sync
+            from .serializers import MovieSerializer
+            from .recommender.recommendations import get_user_recommendations
+
+            channel_layer = get_channel_layer()
+            rec_result = get_user_recommendations(user.username)
+            recommendations = rec_result['recommendations']
+            data = MovieSerializer(recommendations, many=True).data
+            async_to_sync(channel_layer.group_send)(
+                f"recommend_{user.username}",
+                {
+                    "type": "send_recommendations",
+                    "data": {"recommendations": data}
+                }
+            )
+        except Exception as e:
+            logger.error(f"Error sending real-time recommendations: {e}")
+
         return Response({'status': 'rating set'}, status=status.HTTP_200_OK)
     
 

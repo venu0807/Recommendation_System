@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { SkeletonMovieCard } from "../Skeleton";
 
 export default function Trending() {
-  const { trendingMovies, loading, user, preferredMovies, ratedMovies } = useContext(UserContext);
+  const { trendingMovies, loading, user, preferredMovies, ratedMovies, recommendationLoading } = useContext(UserContext);
 
   console.log("Trending component state:", {
     isLoggedIn: !!user,
@@ -13,7 +13,7 @@ export default function Trending() {
     trendingMoviesCount: trendingMovies.length
   });
 
-  if (loading) {
+  if (loading || recommendationLoading) {
     return (
       <div className="container-fluid mt-5">
         <div className="row ml-5 pl-5">
@@ -23,11 +23,18 @@ export default function Trending() {
             </div>
           ))}
         </div>
+        {recommendationLoading && (
+          <div className="text-center mt-3">
+            <span className="spinner-border text-primary" role="status" aria-hidden="true"></span>
+            <span className="ml-2">Updating recommendations...</span>
+          </div>
+        )}
       </div>
     );
   }
 
-  const moviesToDisplay = user && preferredMovies.length > 0 ? preferredMovies : trendingMovies;
+  // Show trending movies if user has no recommended (preferred) movies
+  const moviesToDisplay = user && preferredMovies && preferredMovies.length > 0 ? preferredMovies : trendingMovies;
 
   if (!moviesToDisplay || moviesToDisplay.length === 0) {
     return (

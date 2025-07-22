@@ -42,6 +42,9 @@ export default function PersonComponent() {
         // If not in context, fetch from API
         const response = await fetch(`http://localhost:8000/movie/${id}/`);
         const data = await response.json();
+        // Defensive: ensure cast/crew are always arrays
+        if (!Array.isArray(data.cast)) data.cast = [];
+        if (!Array.isArray(data.crew)) data.crew = [];
         setMovieData(data);
       } catch (error) {
         console.error("Error fetching movie data:", error);

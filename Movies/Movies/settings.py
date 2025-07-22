@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
     'whitenoise.runserver_nostatic',
+    'channels',
 ]
 
 
@@ -132,7 +133,19 @@ TEMPLATES = [
     },
 ]
 
+
 WSGI_APPLICATION = 'Movies.wsgi.application'
+ASGI_APPLICATION = 'Movies.asgi.application'
+
+# Optionally configure channel layers for production (e.g., Redis)
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             'hosts': [os.environ.get('REDIS_URL', 'redis://localhost:6379/0')],
+#         },
+#     },
+# }
 
 
 # Database
