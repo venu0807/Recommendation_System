@@ -1,37 +1,9 @@
-  // Update user profile (avatar, bio, etc.)
-  const updateProfile = async (profileData) => {
-    const formData = new FormData();
-    Object.entries(profileData).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        formData.append(key, value);
-      }
-    });
-    try {
-      const response = await fetch('http://127.0.0.1:8000/api/user/profile/', {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${authTokens?.access}`,
-        },
-        body: formData,
-      });
-      if (response.ok) {
-        const updated = await response.json();
-        setUser((prev) => ({ ...prev, ...updated }));
-        addNotification('Profile updated successfully', 'success');
-      } else {
-        addNotification('Failed to update profile', 'danger');
-      }
-    } catch (err) {
-      addNotification('Error updating profile', 'danger');
-    }
-  };
 import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
 import ErrorBoundary from './ErrorBoundary';
 
 export const UserContext = createContext();
-
 
 export const UserProvider = ({ children }) => {
   const wsRef = useRef(null);
@@ -47,46 +19,12 @@ export const UserProvider = ({ children }) => {
       : null;
   });
 
-  // ...existing useState and other hooks...
-  useEffect(() => {
-    if (!user) return;
-    // Use ws:// for local dev, wss:// for production
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const wsUrl = `${wsProtocol}://${window.location.host}/ws/recommendations/`;
-    wsRef.current = new window.WebSocket(wsUrl);
-
-    wsRef.current.onopen = () => {
-      console.log('WebSocket connected for recommendations');
-    };
-    wsRef.current.onclose = () => {
-      console.log('WebSocket disconnected');
-    };
-    wsRef.current.onerror = (e) => {
-      console.error('WebSocket error:', e);
-    };
-    wsRef.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.recommendations) {
-          setPreferredMovies(data.recommendations);
-          setRecommendationLoading(false);
-          addNotification('Recommendations updated in real time!', 'info');
-        }
-      } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
-      }
-    };
-    return () => {
-      if (wsRef.current) wsRef.current.close();
-    };
-  }, [user]);
-
   const [movies, setMovies] = useState([]);
   const [upcomingMovies, setUpcomingMovies] = useState([]);
   const [nowplayingMovies, setNowplayingMovies] = useState([]);
   const [trendingMovies, setTrendingMovies] = useState([]);
   const [topratedMovies, setTopratedMovies] = useState([]);
-  const [cast] = useState([]); // Remove setCast to fix unused var warning
+  const [cast] = useState([]);
   const [preferredMovies, setPreferredMovies] = useState([]);
   const [ratedMovies, setRatedMovies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -96,7 +34,12 @@ export const UserProvider = ({ children }) => {
   const [watchHistory, setWatchHistory] = useState([]);
   const [searchHistory, setSearchHistory] = useState([]);
   const [recommendationLoading, setRecommendationLoading] = useState(true);
+  const [tvShowsPopular, setTvShowsPopular] = useState([]);
+  const [tvShowsTopRated, setTvShowsTopRated] = useState([]);
+  const [tvShowsOnAir, setTvShowsOnAir] = useState([]);
+  
   const navigate = useNavigate();
+  
   const [preferences, setPreferences] = useState({
     autoplayTrailers: true,
     showAdultContent: false,
@@ -116,14 +59,78 @@ export const UserProvider = ({ children }) => {
     confirmPassword: "",
   });
 
+  // Fetch user profile data
+  const fetchUserProfile = async () => {
+    if (!authTokens?.access) return;
+    
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/user/me/', {
+        headers: {
+          Authorization: `Bearer ${authTokens.access}`,
+        },
+      });
+      
+      if (response.ok) {
+        const profileData = await response.json();
+        setUser((prev) => ({ ...prev, profile: profileData }));
+      } else {
+        console.error('Failed to fetch user profile');
+      }
+    } catch (err) {
+      console.error('Error fetching user profile:', err);
+    }
+  };
+
+  // Update user profile (avatar, bio, etc.)
+  const updateProfile = async (profileData) => {
+    const formData = new FormData();
+    Object.entries(profileData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value);
+      }
+    });
+    try {
+      // First get the current user profile to get the ID
+      const profileResponse = await fetch('http://127.0.0.1:8000/api/user/me/', {
+        headers: {
+          Authorization: `Bearer ${authTokens?.access}`,
+        },
+      });
+      
+      if (!profileResponse.ok) {
+        throw new Error('Failed to get current profile');
+      }
+      
+      const currentProfile = await profileResponse.json();
+      
+      // Update using the ViewSet endpoint
+      const response = await fetch(`http://127.0.0.1:8000/user/${currentProfile.id}/`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${authTokens?.access}`,
+        },
+        body: formData,
+      });
+      
+      if (response.ok) {
+        const updated = await response.json();
+        setUser((prev) => ({ ...prev, profile: updated }));
+        addNotification('Profile updated successfully', 'success');
+      } else {
+        addNotification('Failed to update profile', 'danger');
+      }
+    } catch (err) {
+      addNotification('Error updating profile', 'danger');
+      console.error('Error updating profile:', err);
+    }
+  };
+
   const handleChange = (e) => {
     setFormData({
       ...formData,
       [e.target.name]: e.target.value
     });
   };
-
- 
 
   const registerUser = async (e) => {
     e.preventDefault();
@@ -181,7 +188,7 @@ export const UserProvider = ({ children }) => {
 
     if (response.status === 200) {
       setAuthTokens(data);
-      setUser(jwtDecode(data.access)); // Ensure this is correctly decoding the user info
+      setUser(jwtDecode(data.access));
       localStorage.setItem("authTokens", JSON.stringify(data));
       await fetchUserProfile();
       navigate("/");
@@ -200,7 +207,6 @@ export const UserProvider = ({ children }) => {
   const updateToken = async () => {
     console.log("Update Token Called!");
     try {
-      // Only try to refresh if we have a refresh token
       if (!authTokens?.refresh) {
         setLoading(false);
         return;
@@ -327,7 +333,9 @@ export const UserProvider = ({ children }) => {
       setLoading(false);
       return;
     }
+    
     try {
+      console.log('Attempting to fetch data from backend...');
       const [
         moviesResponse,
         upcomingResponse,
@@ -342,32 +350,59 @@ export const UserProvider = ({ children }) => {
         fetch("http://localhost:8000/movie/top_rated/"),
       ]);
 
-      // Handle responses and set state
+      let hasData = false;
+
       if (moviesResponse.status === "fulfilled" && moviesResponse.value.ok) {
         const data = await moviesResponse.value.json();
         setMovies(data);
+        hasData = true;
       } else {
-        setMovies(staticMovies); // fallback for demo
+        setMovies(staticMovies);
       }
       if (upcomingResponse.status === "fulfilled" && upcomingResponse.value.ok) {
         const data = await upcomingResponse.value.json();
         setUpcomingMovies(data);
+        hasData = true;
+      } else {
+        setUpcomingMovies(staticMovies);
       }
       if (nowPlayingResponse.status === "fulfilled" && nowPlayingResponse.value.ok) {
         const data = await nowPlayingResponse.value.json();
         setNowplayingMovies(data);
+        hasData = true;
+      } else {
+        setNowplayingMovies(staticMovies);
       }
       if (trendingResponse.status === "fulfilled" && trendingResponse.value.ok) {
         const data = await trendingResponse.value.json();
         setTrendingMovies(data);
+        hasData = true;
+      } else {
+        setTrendingMovies(staticMovies);
       }
       if (topRatedResponse.status === "fulfilled" && topRatedResponse.value.ok) {
         const data = await topRatedResponse.value.json();
         setTopratedMovies(data);
+        hasData = true;
+      } else {
+        setTopratedMovies(staticMovies);
+      }
+
+      if (!hasData) {
+        console.log('Backend not available, using static data');
+        setMovies(staticMovies);
+        setUpcomingMovies(staticMovies);
+        setNowplayingMovies(staticMovies);
+        setTrendingMovies(staticMovies);
+        setTopratedMovies(staticMovies);
       }
     } catch (error) {
-      setMovies(staticMovies); // fallback for demo
-      console.error("Error fetching data:", error);
+      console.error("Error fetching data from backend, using static data:", error);
+      setMovies(staticMovies);
+      setUpcomingMovies(staticMovies);
+      setNowplayingMovies(staticMovies);
+      setTrendingMovies(staticMovies);
+      setTopratedMovies(staticMovies);
     } finally {
       setLoading(false);
     }
@@ -435,7 +470,7 @@ export const UserProvider = ({ children }) => {
         },
         body: JSON.stringify({
           movie_id: movieId,
-          rating: Number(rating).toFixed(1), // Always send as decimal string (e.g., '8.0')
+          rating: Number(rating).toFixed(1),
           feedback: feedback || "",
         }),
       });
@@ -447,7 +482,6 @@ export const UserProvider = ({ children }) => {
         throw new Error(data.detail || "Failed to rate movie");
       }
 
-      // Fetch updated recommendations after rating
       await fetchPersonalizedMovies();
     } catch (error) {
       console.error("Error rating movie:", error);
@@ -474,14 +508,6 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // Add this useEffect to fetch favorites when user logs in
-  const fetchFavoritesCallback = useCallback(fetchFavorites, [authTokens]);
-  useEffect(() => {
-      if (authTokens) {
-          fetchFavoritesCallback();
-      }
-  }, [authTokens, fetchFavoritesCallback]);
-
   const addToFavorites = async (movieId) => {
     if (!authTokens) {
         addNotification('Please login to add favorites', 'warning');
@@ -503,7 +529,7 @@ export const UserProvider = ({ children }) => {
             const data = await response.json();
             setFavorites(prev => [...prev, data]);
             addNotification('Added to favorites!', 'success');
-            await fetchFavorites(); // Refresh the favorites list
+            await fetchFavorites();
             return true;
         }
         throw new Error('Failed to add to favorites');
@@ -512,9 +538,9 @@ export const UserProvider = ({ children }) => {
         addNotification('Failed to add to favorites', 'error');
         return false;
     }
-};
+  };
 
-const removeFromFavorites = async (movieId) => {
+  const removeFromFavorites = async (movieId) => {
     if (!authTokens) return false;
 
     try {
@@ -526,11 +552,10 @@ const removeFromFavorites = async (movieId) => {
         });
 
         if (response.ok) {
-            // Update the favorites state by filtering out the removed movie
             const updatedFavorites = favorites.filter(fav => fav.movie.id !== movieId);
             setFavorites(updatedFavorites);
             addNotification('Removed from favorites', 'info');
-            await fetchFavorites(); // Add this line to refresh the favorites list
+            await fetchFavorites();
             return true;
         }
         throw new Error('Failed to remove from favorites');
@@ -539,37 +564,29 @@ const removeFromFavorites = async (movieId) => {
         addNotification('Failed to remove from favorites', 'error');
         return false;
     }
-};
+  };
 
-const fetchWatchlist = async () => {
-  if (!authTokens) return;
-  
-  try {
-      const response = await fetch("http://localhost:8000/watchlist/my_watchlist/", {
-          headers: {
-              'Authorization': `Bearer ${authTokens.access}`,
-              'Content-Type': 'application/json',
-          }
-      });
-      
-      if (response.ok) {
-          const data = await response.json();
-          setWatchlist(data);
-      }
-  } catch (error) {
-      console.error("Error fetching watchlist:", error);
-  }
-};
-
-// Add this useEffect to fetch watchlist when user logs in
-const fetchWatchlistCallback = useCallback(fetchWatchlist, [authTokens]);
-useEffect(() => {
-    if (authTokens) {
-        fetchWatchlistCallback();
+  const fetchWatchlist = async () => {
+    if (!authTokens) return;
+    
+    try {
+        const response = await fetch("http://localhost:8000/watchlist/my_watchlist/", {
+            headers: {
+                'Authorization': `Bearer ${authTokens.access}`,
+                'Content-Type': 'application/json',
+            }
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            setWatchlist(data);
+        }
+    } catch (error) {
+        console.error("Error fetching watchlist:", error);
     }
-}, [authTokens, fetchWatchlistCallback]);
+  };
 
-const addToWatchlist = async (movieId) => {
+  const addToWatchlist = async (movieId) => {
     if (!authTokens) {
         addNotification('Please login to add to watchlist', 'warning');
         navigate('/login');
@@ -590,7 +607,7 @@ const addToWatchlist = async (movieId) => {
             const data = await response.json();
             setWatchlist(prev => [...prev, data]);
             addNotification('Added to watchlist!', 'success');
-            await fetchWatchlist(); // Refresh the watchlist
+            await fetchWatchlist();
             return true;
         }
         throw new Error('Failed to add to watchlist');
@@ -599,9 +616,9 @@ const addToWatchlist = async (movieId) => {
         addNotification('Failed to add to watchlist', 'error');
         return false;
     }
-};
+  };
 
-const removeFromWatchlist = async (movieId) => {
+  const removeFromWatchlist = async (movieId) => {
     if (!authTokens) return false;
 
     try {
@@ -616,7 +633,7 @@ const removeFromWatchlist = async (movieId) => {
             const updatedWatchlist = watchlist.filter(item => item.movie.id !== movieId);
             setWatchlist(updatedWatchlist);
             addNotification('Removed from watchlist', 'info');
-            await fetchWatchlist(); // Refresh the watchlist
+            await fetchWatchlist();
             return true;
         }
         throw new Error('Failed to remove from watchlist');
@@ -625,7 +642,7 @@ const removeFromWatchlist = async (movieId) => {
         addNotification('Failed to remove from watchlist', 'error');
         return false;
     }
-};
+  };
 
   const addNotification = (message, type = "info") => {
     const notification = {
@@ -666,86 +683,6 @@ const removeFromWatchlist = async (movieId) => {
     }));
   };
 
-  const fetchPersonalizedMoviesCallback = useCallback(fetchPersonalizedMovies, [authTokens]);
-  useEffect(() => {
-    if (authTokens) {
-      fetchPersonalizedMoviesCallback();
-    }
-  }, [authTokens, fetchPersonalizedMoviesCallback]);
-
-  // Add debounced token refresh
-  const debouncedUpdateToken = () => {
-    let timeoutId;
-    return () => {
-      if (timeoutId) {
-        clearTimeout(timeoutId);
-      }
-      timeoutId = setTimeout(() => {
-        updateToken();
-      }, 100);
-    };
-  };
-
-  const handleTokenRefresh = debouncedUpdateToken();
-
-  // Update useEffect for token refresh
-  const handleTokenRefreshCallback = useCallback(handleTokenRefresh, [authTokens, handleTokenRefresh]);
-  useEffect(() => {
-    let isMounted = true;
-    let intervalId;
-
-    const refreshToken = async () => {
-      if (!isMounted || !authTokens?.refresh) return;
-      try {
-        await handleTokenRefreshCallback();
-      } catch (error) {
-        console.error("Token refresh failed:", error);
-      }
-    };
-
-    if (loading) {
-      refreshToken();
-    }
-
-    intervalId = setInterval(refreshToken, 60000);
-
-    return () => {
-      isMounted = false;
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
-    };
-  }, [authTokens, loading, handleTokenRefreshCallback]);
-
-  // Add this useEffect
-  const fetchDataCallback = useCallback(fetchData, [isLocalhost, staticMovies]);
-  useEffect(() => {
-    fetchDataCallback();
-  }, [fetchDataCallback]);
-
-  // Add this near your other useEffects
-  useEffect(() => {
-    if (user) {
-      console.log("Auth state changed:", {
-        user: user,
-        preferredMovies: preferredMovies.length,
-        ratedMovies: ratedMovies.length,
-      });
-    }
-  }, [user, preferredMovies, ratedMovies]);
-
-  // Fetch user profile on app load if tokens exist
-  useEffect(() => {
-    if (authTokens) {
-      fetchUserProfile();
-    }
-    // eslint-disable-next-line
-  }, [authTokens]);
-
-  const [tvShowsPopular, setTvShowsPopular] = useState([]);
-  const [tvShowsTopRated, setTvShowsTopRated] = useState([]);
-  const [tvShowsOnAir, setTvShowsOnAir] = useState([]);
-
   const fetchTvShows = async () => {
     try {
       const [popularRes, topRatedRes, onAirRes] = await Promise.all([
@@ -761,9 +698,129 @@ const removeFromWatchlist = async (movieId) => {
     }
   };
 
+  // WebSocket connection for real-time recommendations
+  useEffect(() => {
+    if (!user) return;
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${wsProtocol}://${window.location.host}/ws/recommendations/`;
+    wsRef.current = new window.WebSocket(wsUrl);
+
+    wsRef.current.onopen = () => {
+      console.log('WebSocket connected for recommendations');
+    };
+    wsRef.current.onclose = () => {
+      console.log('WebSocket disconnected');
+    };
+    wsRef.current.onerror = (e) => {
+      console.error('WebSocket error:', e);
+    };
+    wsRef.current.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.recommendations) {
+          setPreferredMovies(data.recommendations);
+          setRecommendationLoading(false);
+          addNotification('Recommendations updated in real time!', 'info');
+        }
+      } catch (err) {
+        console.error('Error parsing WebSocket message:', err);
+      }
+    };
+    return () => {
+      if (wsRef.current) wsRef.current.close();
+    };
+  }, [user]);
+
+  // Fetch favorites when user logs in
+  const fetchFavoritesCallback = useCallback(fetchFavorites, [authTokens]);
+  useEffect(() => {
+      if (authTokens) {
+          fetchFavoritesCallback();
+      }
+  }, [authTokens, fetchFavoritesCallback]);
+
+  // Fetch watchlist when user logs in
+  const fetchWatchlistCallback = useCallback(fetchWatchlist, [authTokens]);
+  useEffect(() => {
+      if (authTokens) {
+          fetchWatchlistCallback();
+      }
+  }, [authTokens, fetchWatchlistCallback]);
+
+  // Fetch personalized movies when user logs in
+  const fetchPersonalizedMoviesCallback = useCallback(fetchPersonalizedMovies, [authTokens]);
+  useEffect(() => {
+    if (authTokens) {
+      fetchPersonalizedMoviesCallback();
+    }
+  }, [authTokens, fetchPersonalizedMoviesCallback]);
+
+  // Fetch user profile on app load if tokens exist
+  useEffect(() => {
+    if (authTokens) {
+      fetchUserProfile();
+    }
+  }, [authTokens]);
+
+  // Fetch initial data
+  const fetchDataCallback = useCallback(fetchData, [isLocalhost, staticMovies]);
+  useEffect(() => {
+    fetchDataCallback();
+    
+    // Fallback: ensure loading is set to false even if fetchData fails
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.log('Setting loading to false due to timeout fallback');
+        setLoading(false);
+      }
+    }, 5000); // 5 second timeout
+
+    return () => clearTimeout(timeoutId);
+  }, [fetchDataCallback, loading]);
+
+  // Fetch TV shows
   useEffect(() => {
     fetchTvShows();
   }, []);
+
+  // Token refresh logic
+  useEffect(() => {
+    let isMounted = true;
+    let intervalId;
+
+    const refreshToken = async () => {
+      if (!isMounted || !authTokens?.refresh) return;
+      try {
+        await updateToken();
+      } catch (error) {
+        console.error("Token refresh failed:", error);
+      }
+    };
+
+    if (loading && authTokens?.refresh) {
+      refreshToken();
+    }
+
+    intervalId = setInterval(refreshToken, 60000);
+
+    return () => {
+      isMounted = false;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [authTokens, loading]);
+
+  // Debug logging
+  useEffect(() => {
+    if (user) {
+      console.log("Auth state changed:", {
+        user: user,
+        preferredMovies: preferredMovies.length,
+        ratedMovies: ratedMovies.length,
+      });
+    }
+  }, [user, preferredMovies, ratedMovies]);
 
   const contextValue = {
     authTokens,
@@ -799,9 +856,8 @@ const removeFromWatchlist = async (movieId) => {
     preferences,
     updatePreferences,
     addNotInterestedMovie,
-    setFavorites, // Add this line to expose setFavorites
+    setFavorites,
     setWatchlist,
-    // Real-time recommendation loading state
     recommendationLoading,
     setRecommendationLoading,
     fetchPersonalizedMovies,
@@ -813,10 +869,21 @@ const removeFromWatchlist = async (movieId) => {
     fetchTvShows,
   };
 
+  console.log('Context render - loading:', loading, 'user:', !!user, 'movies count:', trendingMovies.length);
+  
   return (
     <ErrorBoundary>
       <UserContext.Provider value={contextValue}>
-        {loading ? null : children}
+        {loading ? (
+          <div className="text-center p-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+            <p className="mt-2">Loading movies...</p>
+          </div>
+        ) : (
+          children
+        )}
       </UserContext.Provider>
     </ErrorBoundary>
   );

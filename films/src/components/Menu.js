@@ -5,7 +5,7 @@ import LoginIcon from "@mui/icons-material/Login";
 import SearchIcon from "@mui/icons-material/Search";
 
 export default function Menu() {
-  const { user, logoutUser, theme, toggleTheme, addNotification, addToWatchHistory, addToSearchHistory, preferences, updatePreferences } = useContext(UserContext);
+  const { user, logoutUser, addToSearchHistory } = useContext(UserContext);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -61,10 +61,11 @@ export default function Menu() {
                   Movies
                 </Link>
                 <ul className="dropdown-menu animate slideIn" aria-labelledby="moviesDropdown">
-                  <li><Link className="dropdown-item" to="/movie">Popular</Link></li>
-                  <li><Link className="dropdown-item" to="/movie/top-rated">Top Rated</Link></li>
-                  <li><Link className="dropdown-item" to="/movie/now-playing">Now Playing</Link></li>
-                  <li><Link className="dropdown-item" to="/movie/upcoming">Upcoming</Link></li>
+                  <li><Link className="dropdown-item" to="/movies">Popular</Link></li>
+                  <li><Link className="dropdown-item" to="/movies/top-rated">Top Rated</Link></li>
+                  <li><Link className="dropdown-item" to="/movies/now-playing">Now Playing</Link></li>
+                  <li><Link className="dropdown-item" to="/movies/upcoming">Upcoming</Link></li>
+                  <li><Link className="dropdown-item" to="/movies/trending">Trending</Link></li>
                 </ul>
               </li>
               <li className="nav-item">
