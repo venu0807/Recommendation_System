@@ -3,11 +3,10 @@ import { UserContext } from './Context';
 import { Link } from 'react-router-dom';
 import { SkeletonMovieCard } from './Skeleton';
 
-const HomePage = () => {
+const HomePage = React.memo(() => {
   const { 
     trendingMovies, 
     upcomingMovies, 
-    topratedMovies, 
     preferredMovies, 
     user, 
     loading 
@@ -233,6 +232,6 @@ const HomePage = () => {
       )}
     </div>
   );
-};
+});
 
-export default HomePage; 
+export default HomePage;

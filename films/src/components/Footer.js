@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Footer = () => {
+const Footer = React.memo(() => {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -16,18 +16,18 @@ const Footer = () => {
               manage your watchlist, and discover amazing films tailored to your taste.
             </p>
             <div className="social-links">
-              <a href="#" className="text-light me-3">
+              <button className="btn btn-link text-light me-3 p-0" style={{textDecoration: 'none'}}>
                 <i className="fab fa-facebook-f"></i>
-              </a>
-              <a href="#" className="text-light me-3">
+              </button>
+              <button className="btn btn-link text-light me-3 p-0" style={{textDecoration: 'none'}}>
                 <i className="fab fa-twitter"></i>
-              </a>
-              <a href="#" className="text-light me-3">
+              </button>
+              <button className="btn btn-link text-light me-3 p-0" style={{textDecoration: 'none'}}>
                 <i className="fab fa-instagram"></i>
-              </a>
-              <a href="#" className="text-light">
+              </button>
+              <button className="btn btn-link text-light p-0" style={{textDecoration: 'none'}}>
                 <i className="fab fa-linkedin-in"></i>
-              </a>
+              </button>
             </div>
           </div>
 
@@ -68,10 +68,10 @@ const Footer = () => {
           <div className="col-md-2 mb-4">
             <h6 className="mb-3">Support</h6>
             <ul className="list-unstyled">
-              <li><a href="#" className="text-muted text-decoration-none">Help Center</a></li>
-              <li><a href="#" className="text-muted text-decoration-none">Contact Us</a></li>
-              <li><a href="#" className="text-muted text-decoration-none">Privacy Policy</a></li>
-              <li><a href="#" className="text-muted text-decoration-none">Terms of Service</a></li>
+              <li><button className="btn btn-link text-muted text-decoration-none p-0">Help Center</button></li>
+              <li><button className="btn btn-link text-muted text-decoration-none p-0">Contact Us</button></li>
+              <li><button className="btn btn-link text-muted text-decoration-none p-0">Privacy Policy</button></li>
+              <li><button className="btn btn-link text-muted text-decoration-none p-0">Terms of Service</button></li>
             </ul>
           </div>
         </div>
@@ -93,6 +93,6 @@ const Footer = () => {
       </div>
     </footer>
   );
-};
+});
 
-export default Footer; 
+export default Footer;
