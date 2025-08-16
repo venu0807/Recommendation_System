@@ -226,6 +226,16 @@ export default function MovieDetail() {
             </div>
             <div className="movie-right">
               <h2>{movie.title}</h2>
+              {/* Genres */}
+              {movie.genres && movie.genres.length > 0 && (
+                <div className="mb-2">
+                  {movie.genres.map((genre) => (
+                    <span key={genre.id || genre.name} className="badge bg-secondary me-2">
+                      {genre.name}
+                    </span>
+                  ))}
+                </div>
+              )}
               <h6>{movie.runtime} min</h6>
               <h6>{movie.popularity}</h6>
               <b>{userRating}</b>
@@ -435,39 +445,6 @@ export default function MovieDetail() {
 
       {/* Modal */}
 
-      <div class="modal" tabindex="-1">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h5 class="modal-title">Modal title</h5>
-              <button
-                type="button"
-                class="close"
-                data-dismiss="modal"
-                aria-label="Close"
-              >
-                <span aria-hidden="true">&times;</span>
-              </button>
-            </div>
-            <div class="modal-body">
-              <p>Modal body text goes here.</p>
-            </div>
-            <div class="modal-footer">
-              <button
-                type="button"
-                class="btn btn-secondary"
-                data-dismiss="modal"
-              >
-                Close
-              </button>
-              <button type="button" class="btn btn-primary">
-                Save changes
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {showModal && (
         <div
           className="modal fade show d-block"
@@ -501,6 +478,34 @@ export default function MovieDetail() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Similar Movies Section */}
+      {movie.similar_movies && movie.similar_movies.length > 0 && (
+        <div className="container mt-5">
+          <h3>Similar Movies</h3>
+          <div className="row">
+            {movie.similar_movies.map((sim) => (
+              <div key={sim.id} className="col-md-3 mb-4">
+                <Link to={`/movie/${sim.id}/${formatTitle(sim.title)}`} className="link">
+                  <div className="card movie-card">
+                    <img
+                      src={`https://image.tmdb.org/t/p/w500${sim.poster_path}`}
+                      alt={sim.title}
+                      className="card-img-top"
+                    />
+                    <div className="card-body">
+                      <b className="card-title text-dark">{sim.title}</b>
+                      <div className="card-bottom">
+                        <b className="card-title text-dark">{sim.release_date}</b>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </div>
+            ))}
           </div>
         </div>
       )}

@@ -19,6 +19,10 @@ import Profile from './components/Profile/Profile';
 import Watchlist from './components/Profile/Watchlist';
 import Favorites from './components/Profile/Favorites';
 import Settings from './components/Settings';
+import TvPopular from './components/Movies/TvPopular';
+import TvTopRated from './components/Movies/TvTopRated';
+import TvOnAir from './components/Movies/TvOnAir';
+import TvShowDetail from './components/Movies/TvShowDetail';
 
 function App() {
     return (
@@ -38,6 +42,10 @@ function App() {
                     <Route path="/person/:id/:personName" element={<PersonDetail />} />
                     <Route path="/search" element={<SearchResults />} />
                     <Route path="/tv" element={<TvShow />} />
+                    <Route path="/tv/popular" element={<TvPopular />} />
+                    <Route path="/tv/top-rated" element={<TvTopRated />} />
+                    <Route path="/tv/on-air" element={<TvOnAir />} />
+                    <Route path="/tv/:id/:name" element={<TvShowDetail />} />
                     <Route path="/login" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/settings" element={<Settings />} />

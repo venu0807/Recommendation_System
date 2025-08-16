@@ -1,3 +1,9 @@
+from rest_framework.parsers import MultiPartParser, FormParser
+# User Profile Update API
+from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.decorators import api_view, permission_classes
 from .models import *
 from .serializers import *
 from .recommender.recommendations import *
@@ -19,6 +25,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 from django.db import models
 import re
+from .serializers import TVShowRatingSerializer, FavoriteTVShowsSerializer, TVShowWatchlistSerializer, TVShowReviewSerializer
 
 logger = logging.getLogger(__name__)
 
@@ -679,3 +686,137 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         favorites = self.get_queryset()
         serializer = self.get_serializer(favorites, many=True)
         return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_my_profile(request):
+    try:
+        user_profile = UserProfileModel.objects.get(user=request.user)
+        serializer = UserProfileSerializer(user_profile)
+        return Response(serializer.data, status=200)
+    except UserProfileModel.DoesNotExist:
+        return Response({'detail': 'Profile not found'}, status=404)
+
+class TVShowRatingViewSet(viewsets.ModelViewSet):
+    queryset = TVShowRatingModel.objects.all()
+    serializer_class = TVShowRatingSerializer
+    permission_classes = [IsAuthenticated]
+
+    @action(detail=False, methods=['post'])
+    def rate(self, request):
+        user = request.user
+        tv_show_id = request.data.get('tv_show_id')
+        rating = request.data.get('rating')
+        review = request.data.get('review', '')
+        feedback = request.data.get('feedback', '')
+        tv_show = get_object_or_404(TVShowModel, id=tv_show_id)
+        from decimal import Decimal, InvalidOperation
+        try:
+            rating_decimal = Decimal(str(rating))
+        except (InvalidOperation, TypeError, ValueError):
+            return Response({'detail': 'Invalid rating value'}, status=status.HTTP_400_BAD_REQUEST)
+        rating_obj, created = TVShowRatingModel.objects.update_or_create(
+            user=user, tv_show=tv_show,
+            defaults={'rating': rating_decimal, 'review': review, 'feedback': feedback}
+        )
+        return Response({'status': 'rating set'}, status=status.HTTP_200_OK)
+
+    @action(detail=False, methods=['get'])
+    def my_ratings(self, request):
+        user = request.user
+        ratings = TVShowRatingModel.objects.filter(user=user)
+        serializer = self.get_serializer(ratings, many=True)
+        return Response(serializer.data)
+
+class FavoriteTVShowsViewSet(viewsets.ModelViewSet):
+    serializer_class = FavoriteTVShowsSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return FavoriteTVShowsModel.objects.filter(user=self.request.user, is_active=True).select_related('tv_show')
+
+    @action(detail=False, methods=['post'])
+    def add(self, request):
+        tv_show_id = request.data.get('tv_show_id')
+        if not tv_show_id:
+            return Response({'error': 'tv_show_id is required'}, status=400)
+        try:
+            tv_show = TVShowModel.objects.get(id=tv_show_id)
+            favorite, created = FavoriteTVShowsModel.objects.get_or_create(
+                user=request.user,
+                tv_show=tv_show,
+                defaults={'is_active': True}
+            )
+            if not created and not favorite.is_active:
+                favorite.is_active = True
+                favorite.removed_at = None
+                favorite.save()
+            serializer = self.get_serializer(favorite)
+            return Response(serializer.data, status=201)
+        except TVShowModel.DoesNotExist:
+            return Response({'error': 'TV Show not found'}, status=404)
+
+    @action(detail=True, methods=['delete'])
+    def remove(self, request, pk=None):
+        try:
+            favorite = FavoriteTVShowsModel.objects.get(
+                user=request.user,
+                tv_show_id=pk,
+                is_active=True
+            )
+            favorite.delete()
+            return Response(status=204)
+        except FavoriteTVShowsModel.DoesNotExist:
+            return Response({'error': 'Favorite not found'}, status=404)
+
+class TVShowWatchlistViewSet(viewsets.ModelViewSet):
+    serializer_class = TVShowWatchlistSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return TVShowWatchlistModel.objects.filter(user=self.request.user, is_active=True).select_related('tv_show')
+
+    @action(detail=False, methods=['post'])
+    def add(self, request):
+        tv_show_id = request.data.get('tv_show_id')
+        if not tv_show_id:
+            return Response({'error': 'tv_show_id is required'}, status=400)
+        try:
+            tv_show = TVShowModel.objects.get(id=tv_show_id)
+            watchlist_item, created = TVShowWatchlistModel.objects.get_or_create(
+                user=request.user,
+                tv_show=tv_show,
+                defaults={'is_active': True}
+            )
+            if not created and not watchlist_item.is_active:
+                watchlist_item.is_active = True
+                watchlist_item.removed_at = None
+                watchlist_item.save()
+            serializer = self.get_serializer(watchlist_item)
+            return Response(serializer.data, status=201)
+        except TVShowModel.DoesNotExist:
+            return Response({'error': 'TV Show not found'}, status=404)
+
+    @action(detail=True, methods=['delete'])
+    def remove(self, request, pk=None):
+        try:
+            watchlist_item = TVShowWatchlistModel.objects.get(
+                user=request.user,
+                tv_show_id=pk,
+                is_active=True
+            )
+            watchlist_item.delete()
+            return Response(status=204)
+        except TVShowWatchlistModel.DoesNotExist:
+            return Response({'error': 'Watchlist item not found'}, status=404)
+
+class TVShowReviewViewSet(viewsets.ModelViewSet):
+    queryset = TVShowReviewModel.objects.all()
+    serializer_class = TVShowReviewSerializer
+    permission_classes = [IsAuthenticated]
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    def get_queryset(self):
+        return TVShowReviewModel.objects.filter(tv_show_id=self.request.query_params.get('tv_show_id')) if self.request.query_params.get('tv_show_id') else TVShowReviewModel.objects.all()

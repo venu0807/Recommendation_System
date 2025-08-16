@@ -33,8 +33,13 @@ export default function Trending() {
     );
   }
 
-  // Show trending movies if user has no recommended (preferred) movies
-  const moviesToDisplay = user && preferredMovies && preferredMovies.length > 0 ? preferredMovies : trendingMovies;
+
+  // Show recommended movies if user is logged in, otherwise show trending movies
+  let moviesToDisplay = trendingMovies;
+  if (user) {
+    // If user is logged in and has recommendations, show them; otherwise, fallback to trending
+    moviesToDisplay = preferredMovies && preferredMovies.length > 0 ? preferredMovies : trendingMovies;
+  }
 
   if (!moviesToDisplay || moviesToDisplay.length === 0) {
     return (

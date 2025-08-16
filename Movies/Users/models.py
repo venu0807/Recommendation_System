@@ -6,11 +6,96 @@ from django.utils import timezone
 from django.utils.timezone import now
 
 
+class MediaModel(models.Model):
+    MEDIA_TYPE_CHOICES = [
+        ('poster', 'Poster'),
+        ('backdrop', 'Backdrop'),
+        ('trailer', 'Trailer'),
+        ('teaser', 'Teaser'),
+        ('image', 'Image'),
+    ]
+    movie = models.ForeignKey('MovieModel', on_delete=models.CASCADE, null=True, blank=True, related_name='media')
+    tv_show = models.ForeignKey('TVShowModel', on_delete=models.CASCADE, null=True, blank=True, related_name='media')
+    media_type = models.CharField(max_length=20, choices=MEDIA_TYPE_CHOICES)
+    url = models.URLField()
+    language = models.CharField(max_length=10, null=True, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        target = self.movie.title if self.movie else (self.tv_show.name if self.tv_show else "Unknown")
+        return f"{self.media_type} for {target}"
+
+
+
+
+class TVShowModel(models.Model):
+    tmdb_id = models.IntegerField(unique=True)
+    name = models.CharField(max_length=255)
+    overview = models.TextField(null=True, blank=True)
+    first_air_date = models.DateField(null=True, blank=True)
+    last_air_date = models.DateField(null=True, blank=True)
+    number_of_seasons = models.PositiveIntegerField(default=1)
+    number_of_episodes = models.PositiveIntegerField(default=1)
+    poster_path = models.URLField(null=True, blank=True)
+    backdrop_path = models.URLField(null=True, blank=True)
+    genres = models.ManyToManyField('GenreModel', related_name='tvshows')
+    cast = models.ManyToManyField('PersonModel', related_name='tvshows_cast')
+    crew = models.ManyToManyField('PersonModel', related_name='tvshows_crew')
+    popularity = models.FloatField(default=0)
+    vote_average = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    vote_count = models.PositiveIntegerField(null=True, blank=True)
+    status = models.CharField(max_length=100, null=True, blank=True)
+    homepage = models.URLField(null=True, blank=True)
+
+    def __str__(self):
+        return self.name
+
+class SeasonModel(models.Model):
+    tv_show = models.ForeignKey(TVShowModel, on_delete=models.CASCADE, related_name='seasons')
+    season_number = models.PositiveIntegerField()
+    name = models.CharField(max_length=255)
+    overview = models.TextField(null=True, blank=True)
+    air_date = models.DateField(null=True, blank=True)
+    poster_path = models.URLField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.tv_show.name} - Season {self.season_number}"
+
+class EpisodeModel(models.Model):
+    season = models.ForeignKey(SeasonModel, on_delete=models.CASCADE, related_name='episodes')
+    episode_number = models.PositiveIntegerField()
+    name = models.CharField(max_length=255)
+    overview = models.TextField(null=True, blank=True)
+    air_date = models.DateField(null=True, blank=True)
+    still_path = models.URLField(null=True, blank=True)
+    vote_average = models.DecimalField(max_digits=4, decimal_places=2, null=True, blank=True)
+    vote_count = models.PositiveIntegerField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.season.tv_show.name} S{self.season.season_number}E{self.episode_number}"
+
+
+# User-created Lists (public/private)
+class UserListModel(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='lists')
+    name = models.CharField(max_length=255)
+    description = models.TextField(null=True, blank=True)
+    movies = models.ManyToManyField('MovieModel', blank=True, related_name='in_lists')
+    tv_shows = models.ManyToManyField('TVShowModel', blank=True, related_name='in_lists')
+    is_public = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({'Public' if self.is_public else 'Private'}) by {self.user.username}"
+
 class UserProfileModel(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     firstname = models.CharField(max_length=30)
     lastname = models.CharField(max_length=30)
     email = models.EmailField()
+    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)
+    bio = models.TextField(null=True, blank=True)
     preferred_movies = models.ManyToManyField('MovieModel', blank=True)
     preferred_genres = models.ManyToManyField('GenreModel', blank=True)
     preferred_actors = models.ManyToManyField('PersonModel', blank=True)
@@ -258,5 +343,54 @@ class FavoriteMoviesModel(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.movie.title}"
+
+
+class TVShowRatingModel(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tv_show = models.ForeignKey(TVShowModel, on_delete=models.CASCADE)
+    rating = models.DecimalField(max_digits=3, decimal_places=1)
+    review = models.TextField(null=True, blank=True)
+    timestamp = models.DateTimeField(default=timezone.now)
+    feedback = models.TextField(blank=True, null=True)
+
+    class Meta:
+        unique_together = ('user', 'tv_show')
+
+    def clean(self):
+        if not (0 <= self.rating <= 10):
+            raise ValidationError('Rating must be between 0 and 10.')
+
+    def __str__(self):
+        return f"{self.user.username} - {self.tv_show.name} - {self.rating}"
+
+class FavoriteTVShowsModel(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tv_show = models.ForeignKey(TVShowModel, on_delete=models.CASCADE)
+    added_date = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True)
+    removed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.tv_show.name}"
+
+class TVShowWatchlistModel(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tv_show = models.ForeignKey(TVShowModel, on_delete=models.CASCADE)
+    added_date = models.DateTimeField(default=timezone.now)
+    is_active = models.BooleanField(default=True)
+    removed_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.user.username} - {self.tv_show.name}"
+
+class TVShowReviewModel(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    tv_show = models.ForeignKey(TVShowModel, on_delete=models.CASCADE)
+    review = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.user.username} review on {self.tv_show.name}"
 
 

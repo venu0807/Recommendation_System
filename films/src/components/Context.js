@@ -1,3 +1,30 @@
+  // Update user profile (avatar, bio, etc.)
+  const updateProfile = async (profileData) => {
+    const formData = new FormData();
+    Object.entries(profileData).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        formData.append(key, value);
+      }
+    });
+    try {
+      const response = await fetch('http://127.0.0.1:8000/api/user/profile/', {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${authTokens?.access}`,
+        },
+        body: formData,
+      });
+      if (response.ok) {
+        const updated = await response.json();
+        setUser((prev) => ({ ...prev, ...updated }));
+        addNotification('Profile updated successfully', 'success');
+      } else {
+        addNotification('Failed to update profile', 'danger');
+      }
+    } catch (err) {
+      addNotification('Error updating profile', 'danger');
+    }
+  };
 import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
@@ -156,6 +183,7 @@ export const UserProvider = ({ children }) => {
       setAuthTokens(data);
       setUser(jwtDecode(data.access)); // Ensure this is correctly decoding the user info
       localStorage.setItem("authTokens", JSON.stringify(data));
+      await fetchUserProfile();
       navigate("/");
     } else {
       alert("Something went wrong!");
@@ -706,6 +734,37 @@ const removeFromWatchlist = async (movieId) => {
     }
   }, [user, preferredMovies, ratedMovies]);
 
+  // Fetch user profile on app load if tokens exist
+  useEffect(() => {
+    if (authTokens) {
+      fetchUserProfile();
+    }
+    // eslint-disable-next-line
+  }, [authTokens]);
+
+  const [tvShowsPopular, setTvShowsPopular] = useState([]);
+  const [tvShowsTopRated, setTvShowsTopRated] = useState([]);
+  const [tvShowsOnAir, setTvShowsOnAir] = useState([]);
+
+  const fetchTvShows = async () => {
+    try {
+      const [popularRes, topRatedRes, onAirRes] = await Promise.all([
+        fetch('http://localhost:8000/tv/popular/'),
+        fetch('http://localhost:8000/tv/top_rated/'),
+        fetch('http://localhost:8000/tv/on_air/'),
+      ]);
+      if (popularRes.ok) setTvShowsPopular(await popularRes.json());
+      if (topRatedRes.ok) setTvShowsTopRated(await topRatedRes.json());
+      if (onAirRes.ok) setTvShowsOnAir(await onAirRes.json());
+    } catch (error) {
+      console.error('Error fetching TV shows:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchTvShows();
+  }, []);
+
   const contextValue = {
     authTokens,
     user,
@@ -746,6 +805,12 @@ const removeFromWatchlist = async (movieId) => {
     recommendationLoading,
     setRecommendationLoading,
     fetchPersonalizedMovies,
+    updateProfile,
+    fetchUserProfile,
+    tvShowsPopular,
+    tvShowsTopRated,
+    tvShowsOnAir,
+    fetchTvShows,
   };
 
   return (

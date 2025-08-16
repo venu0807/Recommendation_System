@@ -5,7 +5,11 @@ from .models import *
 class UserProfileSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserProfileModel
-        fields = ['preferred_genres', 'preferred_actors']  # Include the fields you want to expose
+        fields = [
+            'firstname', 'lastname', 'email', 'avatar', 'bio',
+            'preferred_genres', 'preferred_actors', 'preferred_movies',
+            'date_of_birth', 'location', 'subscription_type'
+        ]
 
     def update(self, instance, validated_data):
         """Override the update method to handle the update of user preferences."""
@@ -136,6 +140,39 @@ class FavoriteMoviesSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = FavoriteMoviesModel
+        fields = '__all__'
+
+
+class TVShowRatingSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+    tv_show = serializers.StringRelatedField()
+
+    class Meta:
+        model = TVShowRatingModel
+        fields = '__all__'
+
+class FavoriteTVShowsSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+    tv_show = serializers.StringRelatedField()
+
+    class Meta:
+        model = FavoriteTVShowsModel
+        fields = '__all__'
+
+class TVShowWatchlistSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+    tv_show = serializers.StringRelatedField()
+
+    class Meta:
+        model = TVShowWatchlistModel
+        fields = '__all__'
+
+class TVShowReviewSerializer(serializers.ModelSerializer):
+    user = serializers.StringRelatedField()
+    tv_show = serializers.StringRelatedField()
+
+    class Meta:
+        model = TVShowReviewModel
         fields = '__all__'
 
 
