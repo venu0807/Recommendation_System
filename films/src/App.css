@@ -334,33 +334,7 @@ body {
   margin-bottom: 1.5rem;
 }
 
-/* Movie Grid */
-.movie-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 2rem;
-  padding: 2rem 0;
-}
 
-/* Call to Action */
-.cta-section {
-  background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
-  color: var(--white-color);
-  padding: 4rem 0;
-  text-align: center;
-}
-
-/* Error States */
-.error-container {
-  text-align: center;
-  padding: 3rem 1rem;
-}
-
-.error-container h1 {
-  font-size: 6rem;
-  color: var(--secondary-color);
-  margin-bottom: 1rem;
-}
 
 /* Profile Styles */
 .profile-page {

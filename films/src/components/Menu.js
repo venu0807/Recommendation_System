@@ -5,7 +5,7 @@ import LoginIcon from "@mui/icons-material/Login";
 import SearchIcon from "@mui/icons-material/Search";
 
 export default function Menu() {
-  const { user, logoutUser, addToSearchHistory } = useContext(UserContext);
+  const { user, logoutUser } = useContext(UserContext);
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -14,7 +14,6 @@ export default function Menu() {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?query=${encodeURIComponent(searchQuery)}`);
-      addToSearchHistory(searchQuery);
       setSearchQuery("");
     }
   };
