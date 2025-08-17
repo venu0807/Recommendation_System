@@ -64,7 +64,6 @@ export default function Menu() {
                   <li><Link className="dropdown-item" to="/movies/top-rated">Top Rated</Link></li>
                   <li><Link className="dropdown-item" to="/movies/now-playing">Now Playing</Link></li>
                   <li><Link className="dropdown-item" to="/movies/upcoming">Upcoming</Link></li>
-                  <li><Link className="dropdown-item" to="/movies/trending">Trending</Link></li>
                 </ul>
               </li>
               <li className="nav-item">

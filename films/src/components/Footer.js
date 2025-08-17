@@ -36,9 +36,9 @@ const Footer = React.memo(() => {
             <h6 className="mb-3">Movies</h6>
             <ul className="list-unstyled">
               <li><Link to="/movies" className="text-muted text-decoration-none">Popular</Link></li>
-              <li><Link to="/movies/trending" className="text-muted text-decoration-none">Trending</Link></li>
-              <li><Link to="/movies/upcoming" className="text-muted text-decoration-none">Upcoming</Link></li>
               <li><Link to="/movies/top-rated" className="text-muted text-decoration-none">Top Rated</Link></li>
+              <li><Link to="/movies/upcoming" className="text-muted text-decoration-none">Upcoming</Link></li>
+              <li><Link to="/movies/now-playing" className="text-muted text-decoration-none">Nowplaying</Link></li>
             </ul>
           </div>
 
