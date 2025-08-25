@@ -25,3 +25,5 @@ services:
       - ./films:/app
     stdin_open: true
     tty: true
+
+    
