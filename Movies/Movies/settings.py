@@ -16,23 +16,19 @@ from datetime import timedelta
 import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
-# BASE_DIR = Path(__file__).resolve().parent.parent
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# SECRET_KEY = 'django-insecure-1##xrh*l8l!yo8@kf)2rr6o__&r^7=xlce&3s%(gf%tx%d!!ir'
-
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-1##xrh*l8l!yo8@kf)2rr6o__&r^7=xlce&3s%(gf%tx%d!!ir')
+SECRET_KEY = 'django-insecure-1##xrh*l8l!yo8@kf)2rr6o__&r^7=xlce&3s%(gf%tx%d!!ir'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-# ALLOWED_HOSTS = ['*']
-ALLOWED_HOSTS = ['your-app-name.up.railway.app', '127.0.0.1']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -206,19 +202,11 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-# STATIC_URL = '/static/'
-# STATIC_ROOT = BASE_DIR / 'staticfiles'
-
-
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'Movies/static')]  # Adjust path if needed
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-CSRF_TRUSTED_ORIGINS = ['https://Recommendation_System.up.railway.app']
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = '/media/'
-# MEDIA_ROOT = BASE_DIR / 'mediafiles'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'mediafiles')
+MEDIA_ROOT = BASE_DIR / 'mediafiles'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -229,8 +217,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CORS_ALLOW_ALL_ORIGINS = True
 
 
-# TMDB_API_KEY = '57b5f1654695efb88db0e9b69b632b82'
-TMDB_API_KEY = os.environ.get('TMDB_API_KEY', '57b5f1654695efb88db0e9b69b632b82')
+TMDB_API_KEY = '57b5f1654695efb88db0e9b69b632b82'
 TMDB_API_URL = 'https://api.themoviedb.org/3'
 
 
