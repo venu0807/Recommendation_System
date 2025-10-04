@@ -2,25 +2,23 @@
   "version": 2,
   "builds": [
     {
-      "src": "package.json",
+      "src": "films/package.json",
       "use": "@vercel/static-build",
-      "config": {
-        "distDir": "build"
-      }
+      "config": { "distDir": "build" }
     },
     {
-      "src": "Movies/wsgi.py",
+      "src": "movies/vercel_wsgi.py",
       "use": "@vercel/python"
     }
   ],
   "routes": [
     {
-      "src": "/api/(.*)",
-      "dest": "Movies/wsgi.py"
+      "src": "/api/(?<path>.*)",
+      "dest": "/movies/vercel_wsgi.py"
     },
     {
       "src": "/(.*)",
-      "dest": "/index.html"
+      "dest": "/films/build/$1"
     }
   ]
 }
