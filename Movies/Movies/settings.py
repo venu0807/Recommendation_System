@@ -236,6 +236,7 @@ CORS_ALLOWED_ORIGINS = [
 ] + [org.strip() for org in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if org.strip()]
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = ['https://movies-backend-ophs.onrender.com']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
 TMDB_API_KEY = os.environ.get('TMDB_API_KEY', '')
