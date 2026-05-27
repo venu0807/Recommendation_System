@@ -812,13 +812,14 @@ class TVShowReviewViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return TVShowReviewModel.objects.filter(tv_show_id=self.request.query_params.get('tv_show_id')) if self.request.query_params.get('tv_show_id') else TVShowReviewModel.objects.all()
-import threading
-from django.core.management import call_command
+import subprocess
+import sys
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def trigger_seed(request):
-    def run_seed():
-        call_command('fetch_movies')
-    threading.Thread(target=run_seed).start()
-    return JsonResponse({'status': 'Database seeding started in the background!'})
+    try:
+        subprocess.Popen([sys.executable, 'manage.py', 'fetch_movies'])
+    except Exception as e:
+        return JsonResponse({'status': f'Error starting background process: {e}'})
+    return JsonResponse({'status': 'Database seeding started in the background via detached process!'})
