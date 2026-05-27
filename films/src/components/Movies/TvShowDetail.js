@@ -152,7 +152,7 @@ export default function TvShowDetail() {
 
   if (loading) {
     return (
-      <div className=`container mt-5">
+      <div className="container mt-5">
         <SkeletonMovieDetail />
         <h3 className="mt-4">Cast</h3>
         <div className="row">
