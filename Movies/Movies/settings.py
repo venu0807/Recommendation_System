@@ -235,6 +235,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://127.0.0.1:3000',
 ] + [org.strip() for org in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if org.strip()]
 CORS_ALLOW_CREDENTIALS = True
+CSRF_TRUSTED_ORIGINS = ['https://movies-backend-ophs.onrender.com']
 
 
 TMDB_API_KEY = os.environ.get('TMDB_API_KEY', '')
