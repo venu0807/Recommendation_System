@@ -9,12 +9,12 @@ const Settings = () => {
 
   useEffect(() => {
     const fetchGenres = async () => {
-      const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/genre/`);
+      const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/genre/`);
       const data = await response.json();
       setGenres(data);
     };
     const fetchActors = async () => {
-      const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/person/`);
+      const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/person/`);
       const data = await response.json();
       setActors(data);
     };

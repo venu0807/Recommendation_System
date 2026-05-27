@@ -42,13 +42,13 @@ export default function MovieDetail() {
   // Fetch movie details based on id
   useEffect(() => {
     const fetchMovieDetails = async () => {
-      const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/movie/${id}/`);
+      const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/movie/${id}/`);
       const movieData = await response.json();
       setFoundMovie(movieData);
 
       if (user) {
         const ratingResponse = await fetch(
-          `${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/rating/my_ratings/`,
+          `${'https://movies-backend-ophs.onrender.com'}/rating/my_ratings/`,
           {
             headers: {
               Authorization: `Bearer ${authTokens.access}`, // Include the token
@@ -71,7 +71,7 @@ export default function MovieDetail() {
   // Find the movie from the context
   const fetchMovieDetails = useCallback(async () => {
     try {
-      const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/movie/${id}/`);
+      const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/movie/${id}/`);
       const data = await response.json();
       setMovie(data);
     } catch (error) {

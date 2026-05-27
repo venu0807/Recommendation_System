@@ -15,7 +15,7 @@ export default function SearchResults() {
       setLoading(true);
       setError(null);
       try {
-        const url = `${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/movie/search?query=${query}&department=${activeDepartment}`;
+        const url = `${'https://movies-backend-ophs.onrender.com'}/movie/search?query=${query}&department=${activeDepartment}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch results');
         const data = await response.json();
