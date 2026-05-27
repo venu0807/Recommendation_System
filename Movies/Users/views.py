@@ -819,7 +819,18 @@ import sys
 @permission_classes([AllowAny])
 def trigger_seed(request):
     try:
-        subprocess.Popen([sys.executable, 'manage.py', 'fetch_movies'])
+        log_file = open('/app/seed_log.txt', 'w')
+        subprocess.Popen([sys.executable, 'manage.py', 'fetch_movies'], stdout=log_file, stderr=subprocess.STDOUT)
     except Exception as e:
-        return JsonResponse({'status': f'Error starting background process: {e}'})
-    return JsonResponse({'status': 'Database seeding started in the background via detached process!'})
+        return JsonResponse({'status': f'Error starting process: {e}'})
+    return JsonResponse({'status': 'Database seeding started! Check /seed-status/ for progress.'})
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def seed_status(request):
+    try:
+        with open('/app/seed_log.txt', 'r') as f:
+            lines = f.readlines()
+            return HttpResponse("<br>".join(lines) or "Log is empty")
+    except Exception as e:
+        return HttpResponse(f"No log yet: {e}")

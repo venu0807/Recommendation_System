@@ -34,4 +34,5 @@ urlpatterns = [
     # path('api/user/profile/', UserProfileUpdateView.as_view(), name='user_profile_update'),
     path('api/user/me/', get_my_profile, name='get_my_profile'),
     path('trigger-seed/', trigger_seed, name='trigger_seed'),
+    path('seed-status/', seed_status, name='seed_status'),
 ]
