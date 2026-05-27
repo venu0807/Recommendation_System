@@ -37,13 +37,13 @@ def load_movies(request):
         from django.db import connection
         with connection.cursor() as cursor:
             cursor.execute('''
-                TRUNCATE TABLE users_moviecrewmodel CASCADE;
-                TRUNCATE TABLE users_moviecastmodel CASCADE;
-                TRUNCATE TABLE users_moviemodel CASCADE;
-                TRUNCATE TABLE users_genremodel CASCADE;
-                TRUNCATE TABLE users_personmodel CASCADE;
-                TRUNCATE TABLE users_productioncompanymodel CASCADE;
-                TRUNCATE TABLE users_keywordmodel CASCADE;
+                TRUNCATE TABLE "Users_moviecrewmodel" CASCADE;
+                TRUNCATE TABLE "Users_moviecastmodel" CASCADE;
+                TRUNCATE TABLE "Users_moviemodel" CASCADE;
+                TRUNCATE TABLE "Users_genremodel" CASCADE;
+                TRUNCATE TABLE "Users_personmodel" CASCADE;
+                TRUNCATE TABLE "Users_productioncompanymodel" CASCADE;
+                TRUNCATE TABLE "Users_keywordmodel" CASCADE;
             ''')
         
         # Load the massive JSON data
@@ -51,6 +51,8 @@ def load_movies(request):
         return HttpResponse("Successfully wiped old movies and loaded all movies from local_db.json into the live database!")
     except Exception as e:
         return HttpResponse(f"Error loading movies: {str(e)}")
+
+
 
 urlpatterns = [
     path('api/health/', health_check, name='health_check'),
