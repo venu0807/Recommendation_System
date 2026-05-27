@@ -33,4 +33,5 @@ urlpatterns = [
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # path('api/user/profile/', UserProfileUpdateView.as_view(), name='user_profile_update'),
     path('api/user/me/', get_my_profile, name='get_my_profile'),
+    path('trigger-seed/', trigger_seed, name='trigger_seed'),
 ]
