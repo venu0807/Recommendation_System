@@ -24,6 +24,8 @@ router.register(r'tvshow-rating', TVShowRatingViewSet, basename='tvshow-rating')
 router.register(r'tvshow-favorite', FavoriteTVShowsViewSet, basename='tvshow-favorite')
 router.register(r'tvshow-watchlist', TVShowWatchlistViewSet, basename='tvshow-watchlist')
 router.register(r'tvshow-review', TVShowReviewViewSet, basename='tvshow-review')
+router.register(r'tv', TVShowViewSet, basename='tvshow')
+router.register(r'keyword', KeywordViewSet, basename='keyword')
 
 # Include router URLs
 urlpatterns = [

@@ -813,6 +813,49 @@ class TVShowReviewViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         return TVShowReviewModel.objects.filter(tv_show_id=self.request.query_params.get('tv_show_id')) if self.request.query_params.get('tv_show_id') else TVShowReviewModel.objects.all()
+class TVShowViewSet(viewsets.ModelViewSet):
+    queryset = TVShowModel.objects.all().prefetch_related(
+        'genres', 'cast', 'crew'
+    )
+    from .serializers import TVShowSerializer
+    serializer_class = TVShowSerializer
+    permission_classes = [AllowAny]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['name', 'genres__name']
+    ordering_fields = ['first_air_date', 'vote_average']
+    ordering = ['-id']
+
+    @method_decorator(cache_page(60 * 15))
+    @action(detail=False, methods=['get'])
+    def popular(self, request):
+        popular_shows = TVShowModel.objects.filter(poster_path__isnull=False).order_by('-popularity')[:20]
+        serializer = self.get_serializer(popular_shows, many=True)
+        return Response(serializer.data)
+
+    @method_decorator(cache_page(60 * 15))
+    @action(detail=False, methods=['get'])
+    def top_rated(self, request):
+        top_rated_shows = TVShowModel.objects.filter(poster_path__isnull=False).order_by('-vote_average', '-vote_count')[:20]
+        serializer = self.get_serializer(top_rated_shows, many=True)
+        return Response(serializer.data)
+
+    @method_decorator(cache_page(60 * 15))
+    @action(detail=False, methods=['get'])
+    def on_air(self, request):
+        on_air_shows = TVShowModel.objects.filter(poster_path__isnull=False).order_by('-first_air_date')[:20]
+        serializer = self.get_serializer(on_air_shows, many=True)
+        return Response(serializer.data)
+
+class KeywordViewSet(viewsets.ModelViewSet):
+    queryset = KeywordModel.objects.all()
+    from .serializers import KeywordSerializer
+    serializer_class = KeywordSerializer
+    permission_classes = [AllowAny]
+    pagination_class = StandardResultsSetPagination
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
+
 import subprocess
 import sys
 

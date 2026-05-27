@@ -185,3 +185,11 @@ class TVShowReviewSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 
+class TVShowSerializer(serializers.ModelSerializer):
+    genres = GenreSerializer(many=True, read_only=True)
+    cast = PersonSerializer(many=True, read_only=True)
+    crew = PersonSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = TVShowModel
+        fields = '__all__'
