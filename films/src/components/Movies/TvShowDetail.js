@@ -21,7 +21,7 @@ export default function TvShowDetail() {
     const fetchShow = async () => {
       setLoading(true);
       try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/tv/${id}/`);
+        const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tv/${id}/`);
         if (!response.ok) throw new Error(`Failed to fetch TV show");
         const data = await response.json();
         setShow(data);
@@ -36,7 +36,7 @@ export default function TvShowDetail() {
   useEffect(() => {
     if (!user || !authTokens) return;
     // Fetch user rating
-    fetch(`${process.env.REACT_APP_API_URL}/tvshow-rating/my_ratings/`, {
+    fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-rating/my_ratings/`, {
       headers: { Authorization: `Bearer ${authTokens.access}` },
     })
       .then((res) => res.json())
@@ -48,7 +48,7 @@ export default function TvShowDetail() {
         }
       });
     // Fetch favorite status
-    fetch(`${process.env.REACT_APP_API_URL}/tvshow-favorite/`, {
+    fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-favorite/`, {
       headers: { Authorization: `Bearer ${authTokens.access}` },
     })
       .then((res) => res.json())
@@ -56,7 +56,7 @@ export default function TvShowDetail() {
         setIsFavorite(data.some((fav) => fav.tv_show === show?.name));
       });
     // Fetch watchlist status
-    fetch(`${process.env.REACT_APP_API_URL}/tvshow-watchlist/`, {
+    fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-watchlist/`, {
       headers: { Authorization: `Bearer ${authTokens.access}` },
     })
       .then((res) => res.json())
@@ -64,7 +64,7 @@ export default function TvShowDetail() {
         setIsWatchlisted(data.some((item) => item.tv_show === show?.name));
       });
     // Fetch reviews
-    fetch(`${process.env.REACT_APP_API_URL}/tvshow-review/?tv_show_id=${id}`, {
+    fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-review/?tv_show_id=${id}`, {
       headers: { Authorization: `Bearer ${authTokens.access}` },
     })
       .then((res) => res.json())
@@ -73,7 +73,7 @@ export default function TvShowDetail() {
 
   const handleRatingSubmit = async () => {
     if (!user || !authTokens) return navigate(`/login");
-    await fetch(`${process.env.REACT_APP_API_URL}/tvshow-rating/rate/`, {
+    await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-rating/rate/`, {
       method: `POST",
       headers: {
         "Content-Type": "application/json",
@@ -88,13 +88,13 @@ export default function TvShowDetail() {
     if (!user || !authTokens) return navigate("/login");
     setIsLoading(true);
     if (isFavorite) {
-      await fetch(`${process.env.REACT_APP_API_URL}/tvshow-favorite/${id}/remove/`, {
+      await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-favorite/${id}/remove/`, {
         method: `DELETE",
         headers: { Authorization: `Bearer ${authTokens.access}` },
       });
       setIsFavorite(false);
     } else {
-      await fetch(`${process.env.REACT_APP_API_URL}/tvshow-favorite/add/`, {
+      await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-favorite/add/`, {
         method: `POST",
         headers: {
           "Content-Type": "application/json",
@@ -111,13 +111,13 @@ export default function TvShowDetail() {
     if (!user || !authTokens) return navigate("/login");
     setIsLoading(true);
     if (isWatchlisted) {
-      await fetch(`${process.env.REACT_APP_API_URL}/tvshow-watchlist/${id}/remove/`, {
+      await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-watchlist/${id}/remove/`, {
         method: `DELETE",
         headers: { Authorization: `Bearer ${authTokens.access}` },
       });
       setIsWatchlisted(false);
     } else {
-      await fetch(`${process.env.REACT_APP_API_URL}/tvshow-watchlist/add/`, {
+      await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-watchlist/add/`, {
         method: `POST",
         headers: {
           "Content-Type": "application/json",
@@ -133,7 +133,7 @@ export default function TvShowDetail() {
   const handleReviewSubmit = async (e) => {
     e.preventDefault();
     if (!user || !authTokens) return navigate("/login");
-    await fetch(`${process.env.REACT_APP_API_URL}/tvshow-review/`, {
+    await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-review/`, {
       method: `POST",
       headers: {
         "Content-Type": "application/json",
@@ -143,7 +143,7 @@ export default function TvShowDetail() {
     });
     setReviewText("");
     // Refresh reviews
-    fetch(`${process.env.REACT_APP_API_URL}/tvshow-review/?tv_show_id=${id}`, {
+    fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-review/?tv_show_id=${id}`, {
       headers: { Authorization: `Bearer ${authTokens.access}` },
     })
       .then((res) => res.json())

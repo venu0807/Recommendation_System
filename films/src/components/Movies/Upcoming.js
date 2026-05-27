@@ -20,12 +20,12 @@ export default function Upcoming() {
 
   useEffect(() => {
     const fetchGenres = async () => {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/genre/`);
+      const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/genre/`);
       const data = await response.json();
       setGenres(data);
     };
     const fetchKeywords = async () => {
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/keyword/`);
+      const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/keyword/`);
       const data = await response.json();
       setKeywords(data);
     };

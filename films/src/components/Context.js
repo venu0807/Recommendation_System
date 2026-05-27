@@ -48,7 +48,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens?.access) return;
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/user/me/', {
+      const response = await fetch('https://movies-backend-ophs.onrender.com/api/user/me/', {
         headers: {
           Authorization: `Bearer ${authTokens.access}`,
         },
@@ -75,7 +75,7 @@ export const UserProvider = ({ children }) => {
     });
     try {
       // First get the current user profile to get the ID
-      const profileResponse = await fetch('http://127.0.0.1:8000/api/user/me/', {
+      const profileResponse = await fetch('https://movies-backend-ophs.onrender.com/api/user/me/', {
         headers: {
           Authorization: `Bearer ${authTokens?.access}`,
         },
@@ -88,7 +88,7 @@ export const UserProvider = ({ children }) => {
       const currentProfile = await profileResponse.json();
       
       // Update using the ViewSet endpoint
-      const response = await fetch(`http://127.0.0.1:8000/user/${currentProfile.id}/`, {
+      const response = await fetch(`https://movies-backend-ophs.onrender.com/user/${currentProfile.id}/`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${authTokens?.access}`,
@@ -128,7 +128,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-      const registerResponse = await fetch("http://127.0.0.1:8000/register/", {
+      const registerResponse = await fetch("https://movies-backend-ophs.onrender.com/register/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -154,7 +154,7 @@ export const UserProvider = ({ children }) => {
 
   const loginUser = async (e) => {
     e.preventDefault();
-    const response = await fetch("http://127.0.0.1:8000/token/", {
+    const response = await fetch("https://movies-backend-ophs.onrender.com/token/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -190,7 +190,7 @@ export const UserProvider = ({ children }) => {
         return;
       }
 
-      const response = await fetch("http://127.0.0.1:8000/token/refresh/", {
+      const response = await fetch("https://movies-backend-ophs.onrender.com/token/refresh/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -312,11 +312,11 @@ export const UserProvider = ({ children }) => {
         trendingResponse,
         topRatedResponse,
       ] = await Promise.allSettled([
-        fetch(`${process.env.REACT_APP_API_URL}/movie/popular/`),
-        fetch(`${process.env.REACT_APP_API_URL}/movie/upcoming/`),
-        fetch(`${process.env.REACT_APP_API_URL}/movie/now_playing/`),
-        fetch(`${process.env.REACT_APP_API_URL}/movie/trending_today/`),
-        fetch(`${process.env.REACT_APP_API_URL}/movie/top_rated/`),
+        fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/movie/popular/`),
+        fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/movie/upcoming/`),
+        fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/movie/now_playing/`),
+        fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/movie/trending_today/`),
+        fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/movie/top_rated/`),
       ]);
 
       let hasData = false;
@@ -326,52 +326,52 @@ export const UserProvider = ({ children }) => {
         setMovies(data);
         hasData = true;
       } else {
-        setMovies(staticMovies);
+        setMovies([]);
       }
       if (upcomingResponse.status === "fulfilled" && upcomingResponse.value.ok) {
         const data = await upcomingResponse.value.json();
         setUpcomingMovies(data);
         hasData = true;
       } else {
-        setUpcomingMovies(staticMovies);
+        setUpcomingMovies([]);
       }
       if (nowPlayingResponse.status === "fulfilled" && nowPlayingResponse.value.ok) {
         const data = await nowPlayingResponse.value.json();
         setNowplayingMovies(data);
         hasData = true;
       } else {
-        setNowplayingMovies(staticMovies);
+        setNowplayingMovies([]);
       }
       if (trendingResponse.status === "fulfilled" && trendingResponse.value.ok) {
         const data = await trendingResponse.value.json();
         setTrendingMovies(data);
         hasData = true;
       } else {
-        setTrendingMovies(staticMovies);
+        setTrendingMovies([]);
       }
       if (topRatedResponse.status === "fulfilled" && topRatedResponse.value.ok) {
         const data = await topRatedResponse.value.json();
         setTopratedMovies(data);
         hasData = true;
       } else {
-        setTopratedMovies(staticMovies);
+        setTopratedMovies([]);
       }
 
       if (!hasData) {
         console.log('Backend not available, using static data');
-        setMovies(staticMovies);
-        setUpcomingMovies(staticMovies);
-        setNowplayingMovies(staticMovies);
-        setTrendingMovies(staticMovies);
-        setTopratedMovies(staticMovies);
+        setMovies([]);
+        setUpcomingMovies([]);
+        setNowplayingMovies([]);
+        setTrendingMovies([]);
+        setTopratedMovies([]);
       }
     } catch (error) {
       console.error("Error fetching data from backend, using static data:", error);
-      setMovies(staticMovies);
-      setUpcomingMovies(staticMovies);
-      setNowplayingMovies(staticMovies);
-      setTrendingMovies(staticMovies);
-      setTopratedMovies(staticMovies);
+      setMovies([]);
+      setUpcomingMovies([]);
+      setNowplayingMovies([]);
+      setTrendingMovies([]);
+      setTopratedMovies([]);
     } finally {
       setLoading(false);
     }
@@ -383,7 +383,7 @@ export const UserProvider = ({ children }) => {
     try {
       console.log("Fetching personalized movies...");
       const response = await fetch(
-        `${process.env.REACT_APP_API_URL}/movie/user_recommendations/`,
+        `${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/movie/user_recommendations/`,
         {
           method: "GET",
           headers: {
@@ -431,7 +431,7 @@ export const UserProvider = ({ children }) => {
 
     try {
       console.log("Rating movie:", { movieId, rating, feedback });
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/movie/rate/`, {
+      const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/movie/rate/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authTokens.access}`,
@@ -461,7 +461,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return;
     
     try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/favorites/my_favorites/`, {
+        const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/favorites/my_favorites/`, {
             headers: {
                 'Authorization': `Bearer ${authTokens.access}`,
                 'Content-Type': 'application/json',
@@ -485,7 +485,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/favorites/add/`, {
+        const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/favorites/add/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -513,7 +513,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return false;
 
     try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/favorites/${movieId}/remove/`, {
+        const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/favorites/${movieId}/remove/`, {
             method: `DELETE",
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
@@ -539,7 +539,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return;
     
     try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/watchlist/my_watchlist/`, {
+        const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/watchlist/my_watchlist/`, {
             headers: {
                 'Authorization': `Bearer ${authTokens.access}`,
                 'Content-Type': 'application/json',
@@ -563,7 +563,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/watchlist/add/`, {
+        const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/watchlist/add/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -591,7 +591,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return false;
 
     try {
-        const response = await fetch(`${process.env.REACT_APP_API_URL}/watchlist/${movieId}/remove/`, {
+        const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/watchlist/${movieId}/remove/`, {
             method: `DELETE",
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
@@ -655,9 +655,9 @@ export const UserProvider = ({ children }) => {
   const fetchTvShows = async () => {
     try {
       const [popularRes, topRatedRes, onAirRes] = await Promise.all([
-        fetch(`${process.env.REACT_APP_API_URL}/tv/popular/`),
-        fetch(`${process.env.REACT_APP_API_URL}/tv/top_rated/`),
-        fetch(`${process.env.REACT_APP_API_URL}/tv/on_air/`),
+        fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tv/popular/`),
+        fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tv/top_rated/`),
+        fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tv/on_air/`),
       ]);
       if (popularRes.ok) setTvShowsPopular(await popularRes.json());
       if (topRatedRes.ok) setTvShowsTopRated(await topRatedRes.json());
