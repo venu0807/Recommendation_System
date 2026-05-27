@@ -22,7 +22,7 @@ export default function TvShowDetail() {
       setLoading(true);
       try {
         const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tv/${id}/`);
-        if (!response.ok) throw new Error(`Failed to fetch TV show");
+        if (!response.ok) throw new Error('Failed to fetch TV show');
         const data = await response.json();
         setShow(data);
       } catch (error) {

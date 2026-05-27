@@ -47,7 +47,7 @@ export default function PersonComponent() {
         if (!Array.isArray(data.crew)) data.crew = [];
         setMovieData(data);
       } catch (error) {
-        console.error(`Error fetching movie data:", error);
+        console.error('Error fetching movie data:', error);
       }
     };
 

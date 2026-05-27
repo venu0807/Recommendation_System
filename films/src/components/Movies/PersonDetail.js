@@ -16,7 +16,7 @@ const PersonDetail = () => {
         // Fetch person details
         const personResponse = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/person/${id}/`);
         if (!personResponse.ok) {
-          throw new Error(`Person not found');
+          throw new Error('Person not found');
         }
         const personData = await personResponse.json();
         setPerson(personData);
@@ -24,7 +24,7 @@ const PersonDetail = () => {
         // Fetch person's movies
         const moviesResponse = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/person/${id}/movies/`);
         if (!moviesResponse.ok) {
-          throw new Error(`Could not fetch movies');
+          throw new Error('Could not fetch movies');
         }
         const moviesData = await moviesResponse.json();
         setMovies(moviesData);
