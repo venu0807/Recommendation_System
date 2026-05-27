@@ -15,9 +15,9 @@ export default function SearchResults() {
       setLoading(true);
       setError(null);
       try {
-        const url = `http://localhost:8000/movie/search?query=${query}&department=${activeDepartment}`;
+        const url = `${process.env.REACT_APP_API_URL}/movie/search?query=${query}&department=${activeDepartment}`;
         const response = await fetch(url);
-        if (!response.ok) throw new Error('Failed to fetch results');
+        if (!response.ok) throw new Error(`Failed to fetch results');
         const data = await response.json();
         setResults(data);
       } catch (error) {

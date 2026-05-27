@@ -20,12 +20,12 @@ export default function Popular() {
 
   useEffect(() => {
     const fetchGenres = async () => {
-      const response = await fetch('http://localhost:8000/genre/');
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/genre/`);
       const data = await response.json();
       setGenres(data);
     };
     const fetchKeywords = async () => {
-      const response = await fetch('http://localhost:8000/keyword/');
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/keyword/`);
       const data = await response.json();
       setKeywords(data);
     };

@@ -321,11 +321,11 @@ export const UserProvider = ({ children }) => {
         trendingResponse,
         topRatedResponse,
       ] = await Promise.allSettled([
-        fetch("http://localhost:8000/movie/popular/"),
-        fetch("http://localhost:8000/movie/upcoming/"),
-        fetch("http://localhost:8000/movie/now_playing/"),
-        fetch("http://localhost:8000/movie/trending_today/"),
-        fetch("http://localhost:8000/movie/top_rated/"),
+        fetch(`${process.env.REACT_APP_API_URL}/movie/popular/`),
+        fetch(`${process.env.REACT_APP_API_URL}/movie/upcoming/`),
+        fetch(`${process.env.REACT_APP_API_URL}/movie/now_playing/`),
+        fetch(`${process.env.REACT_APP_API_URL}/movie/trending_today/`),
+        fetch(`${process.env.REACT_APP_API_URL}/movie/top_rated/`),
       ]);
 
       let hasData = false;
@@ -392,7 +392,7 @@ export const UserProvider = ({ children }) => {
     try {
       console.log("Fetching personalized movies...");
       const response = await fetch(
-        "http://localhost:8000/movie/user_recommendations/",
+        `${process.env.REACT_APP_API_URL}/movie/user_recommendations/`,
         {
           method: "GET",
           headers: {
@@ -440,7 +440,7 @@ export const UserProvider = ({ children }) => {
 
     try {
       console.log("Rating movie:", { movieId, rating, feedback });
-      const response = await fetch("http://localhost:8000/movie/rate/", {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/movie/rate/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authTokens.access}`,
@@ -470,7 +470,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return;
     
     try {
-        const response = await fetch("http://localhost:8000/favorites/my_favorites/", {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/favorites/my_favorites/`, {
             headers: {
                 'Authorization': `Bearer ${authTokens.access}`,
                 'Content-Type': 'application/json',
@@ -494,7 +494,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-        const response = await fetch("http://localhost:8000/favorites/add/", {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/favorites/add/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -522,8 +522,8 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return false;
 
     try {
-        const response = await fetch(`http://localhost:8000/favorites/${movieId}/remove/`, {
-            method: "DELETE",
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/favorites/${movieId}/remove/`, {
+            method: `DELETE",
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
             },
@@ -548,7 +548,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return;
     
     try {
-        const response = await fetch("http://localhost:8000/watchlist/my_watchlist/", {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/watchlist/my_watchlist/`, {
             headers: {
                 'Authorization': `Bearer ${authTokens.access}`,
                 'Content-Type': 'application/json',
@@ -572,7 +572,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-        const response = await fetch("http://localhost:8000/watchlist/add/", {
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/watchlist/add/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -600,8 +600,8 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return false;
 
     try {
-        const response = await fetch(`http://localhost:8000/watchlist/${movieId}/remove/`, {
-            method: "DELETE",
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/watchlist/${movieId}/remove/`, {
+            method: `DELETE",
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
             },
@@ -664,9 +664,9 @@ export const UserProvider = ({ children }) => {
   const fetchTvShows = async () => {
     try {
       const [popularRes, topRatedRes, onAirRes] = await Promise.all([
-        fetch('http://localhost:8000/tv/popular/'),
-        fetch('http://localhost:8000/tv/top_rated/'),
-        fetch('http://localhost:8000/tv/on_air/'),
+        fetch(`${process.env.REACT_APP_API_URL}/tv/popular/`),
+        fetch(`${process.env.REACT_APP_API_URL}/tv/top_rated/`),
+        fetch(`${process.env.REACT_APP_API_URL}/tv/on_air/`),
       ]);
       if (popularRes.ok) setTvShowsPopular(await popularRes.json());
       if (topRatedRes.ok) setTvShowsTopRated(await topRatedRes.json());

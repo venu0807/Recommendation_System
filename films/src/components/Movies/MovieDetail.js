@@ -42,13 +42,13 @@ export default function MovieDetail() {
   // Fetch movie details based on id
   useEffect(() => {
     const fetchMovieDetails = async () => {
-      const response = await fetch(`http://localhost:8000/movie/${id}/`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/movie/${id}/`);
       const movieData = await response.json();
       setFoundMovie(movieData);
 
       if (user) {
         const ratingResponse = await fetch(
-          `http://localhost:8000/rating/my_ratings/`,
+          `${process.env.REACT_APP_API_URL}/rating/my_ratings/`,
           {
             headers: {
               Authorization: `Bearer ${authTokens.access}`, // Include the token
@@ -71,11 +71,11 @@ export default function MovieDetail() {
   // Find the movie from the context
   const fetchMovieDetails = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:8000/movie/${id}/`);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/movie/${id}/`);
       const data = await response.json();
       setMovie(data);
     } catch (error) {
-      console.error("Error fetching movie details:", error);
+      console.error(`Error fetching movie details:", error);
     } finally {
       setLoading(false);
     }

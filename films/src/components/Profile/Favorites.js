@@ -12,7 +12,7 @@ const Favorites = () => {
     if (!authTokens) return;
     setIsUpdating(true);
     try {
-      const response = await fetch("http://localhost:8000/favorites/my_favorites/", {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/favorites/my_favorites/`, {
         headers: {
           'Authorization': `Bearer ${authTokens.access}`,
           'Content-Type': 'application/json',
