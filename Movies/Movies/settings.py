@@ -229,7 +229,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 CORS_ALLOW_ALL_ORIGINS = False
-CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+CORS_ALLOWED_ORIGINS = [
+    'https://recommendation-system-ochre.vercel.app',
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+] + [org.strip() for org in os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if org.strip()]
 CORS_ALLOW_CREDENTIALS = True
 
 
