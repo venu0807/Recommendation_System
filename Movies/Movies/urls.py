@@ -34,14 +34,17 @@ def load_movies(request):
     from django.core.management import call_command
     from Users.models import MovieModel, GenreModel, PersonModel, ProductionCompanyModel, KeywordModel, MovieCastModel, MovieCrewModel
     try:
-        # Wipe existing data to prevent unique constraint violations
-        MovieCrewModel.objects.all().delete()
-        MovieCastModel.objects.all().delete()
-        MovieModel.objects.all().delete()
-        GenreModel.objects.all().delete()
-        PersonModel.objects.all().delete()
-        ProductionCompanyModel.objects.all().delete()
-        KeywordModel.objects.all().delete()
+        from django.db import connection
+        with connection.cursor() as cursor:
+            cursor.execute('''
+                TRUNCATE TABLE "Users_moviecrewmodel" CASCADE;
+                TRUNCATE TABLE "Users_moviecastmodel" CASCADE;
+                TRUNCATE TABLE "Users_moviemodel" CASCADE;
+                TRUNCATE TABLE "Users_genremodel" CASCADE;
+                TRUNCATE TABLE "Users_personmodel" CASCADE;
+                TRUNCATE TABLE "Users_productioncompanymodel" CASCADE;
+                TRUNCATE TABLE "Users_keywordmodel" CASCADE;
+            ''')
         
         # Load the massive JSON data
         call_command('loaddata', 'local_db.json')
