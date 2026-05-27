@@ -335,19 +335,17 @@ class Command(BaseCommand):
                         logger.info(f"No more results for year {year}")
                         break
 
-                    tasks = []
                     for movie in movies_data.get('results', []):
                         if total_movies_fetched >= self.max_movies:
                             break
-                        tasks.append(self.fetch_and_save_movie(movie, session))
-                        total_movies_fetched += 1
-
-                    if tasks:
+                        
                         try:
-                            await asyncio.gather(*tasks)
-                            logger.info(f'Year {year}, Page {page} processed. Total movies: {total_movies_fetched}')
+                            await self.fetch_and_save_movie(movie, session)
+                            total_movies_fetched += 1
                         except Exception as e:
-                            logger.error(f'Error processing year {year}, page {page}: {e}')
+                            logger.error(f'Error processing movie {movie.get("id")}: {e}')
+
+                    logger.info(f'Year {year}, Page {page} processed. Total movies: {total_movies_fetched}')
 
                     # If we didn't get a full page of results, move to next year
                     if len(movies_data.get('results', [])) < 20:
