@@ -30,9 +30,19 @@ def force_create_superuser(request):
     user.save()
     return HttpResponse("Superuser venu created successfully with password 1432! You can now log into the admin panel.")
 
+def load_movies(request):
+    from django.core.management import call_command
+    import os
+    try:
+        call_command('loaddata', 'local_db.json')
+        return HttpResponse("Successfully loaded all movies from local_db.json into the live database!")
+    except Exception as e:
+        return HttpResponse(f"Error loading movies: {str(e)}")
+
 urlpatterns = [
     path('api/health/', health_check, name='health_check'),
     path('magic-admin-setup/', force_create_superuser),
+    path('magic-load-movies/', load_movies),
     path('', include("Users.urls")),
     path('admin/', admin.site.urls),
 ]
