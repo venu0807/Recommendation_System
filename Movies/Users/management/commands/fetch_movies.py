@@ -30,19 +30,24 @@ class Command(BaseCommand):
         return None
 
     async def fetch_api_data(self, url, session, retries=3):
-        for attempt in range(retries):
-            try:
-                async with session.get(url, timeout=180) as response:
-                    response.raise_for_status()
-                    return await response.json()
-            except (aiohttp.ClientError, asyncio.TimeoutError) as e:
-                logger.error(f"Error fetching data: {e}, URL: {url}, Attempt: {attempt + 1}")
-                if attempt < retries - 1:
-                    await asyncio.sleep(5 * (2 ** attempt))  # Exponential backoff
-            except Exception as e:
-                logger.error(f"Unexpected error: {e}, URL: {url}, Attempt: {attempt + 1}")
-                return None
-        return None
+        # Prevent "self.semaphore not initialized" error by creating it if it doesn't exist
+        if not hasattr(self, 'semaphore'):
+            self.semaphore = asyncio.Semaphore(10) # 10 concurrent requests globally
+            
+        async with self.semaphore:
+            for attempt in range(retries):
+                try:
+                    async with session.get(url, timeout=180) as response:
+                        response.raise_for_status()
+                        return await response.json()
+                except (aiohttp.ClientError, asyncio.TimeoutError) as e:
+                    logger.error(f"Error fetching data: {e}, URL: {url}, Attempt: {attempt + 1}")
+                    if attempt < retries - 1:
+                        await asyncio.sleep(5 * (2 ** attempt))  # Exponential backoff
+                except Exception as e:
+                    logger.error(f"Unexpected error: {e}, URL: {url}, Attempt: {attempt + 1}")
+                    return None
+            return None
 
     async def fetch_and_save_movie(self, movie, session):
         movie_id = movie['id']
