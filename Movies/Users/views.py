@@ -178,6 +178,7 @@ class MovieViewSet(viewsets.ModelViewSet):
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'genres__name', 'actor__member__name']
     ordering_fields = ['release_date', 'average_rating']
+    ordering = ['-id']
 
 
     @method_decorator(cache_page(60 * 15))
