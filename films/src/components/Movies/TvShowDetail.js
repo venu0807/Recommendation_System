@@ -72,9 +72,9 @@ export default function TvShowDetail() {
   }, [user, authTokens, show, id]);
 
   const handleRatingSubmit = async () => {
-    if (!user || !authTokens) return navigate(`/login");
+    if (!user || !authTokens) return navigate("/login");
     await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-rating/rate/`, {
-      method: `POST",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${authTokens.access}`,
@@ -89,13 +89,13 @@ export default function TvShowDetail() {
     setIsLoading(true);
     if (isFavorite) {
       await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-favorite/${id}/remove/`, {
-        method: `DELETE",
+        method: "DELETE",
         headers: { Authorization: `Bearer ${authTokens.access}` },
       });
       setIsFavorite(false);
     } else {
       await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-favorite/add/`, {
-        method: `POST",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authTokens.access}`,
@@ -112,13 +112,13 @@ export default function TvShowDetail() {
     setIsLoading(true);
     if (isWatchlisted) {
       await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-watchlist/${id}/remove/`, {
-        method: `DELETE",
+        method: "DELETE",
         headers: { Authorization: `Bearer ${authTokens.access}` },
       });
       setIsWatchlisted(false);
     } else {
       await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-watchlist/add/`, {
-        method: `POST",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${authTokens.access}`,
@@ -134,7 +134,7 @@ export default function TvShowDetail() {
     e.preventDefault();
     if (!user || !authTokens) return navigate("/login");
     await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/tvshow-review/`, {
-      method: `POST",
+      method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${authTokens.access}`,
