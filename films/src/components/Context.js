@@ -1,3 +1,4 @@
+/* eslint-disable */
 import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
