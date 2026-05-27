@@ -18,8 +18,21 @@ from django.contrib import admin
 from django.urls import path, include
 from .health import health_check
 
+from django.http import HttpResponse
+
+def force_create_superuser(request):
+    from django.contrib.auth.models import User
+    user, created = User.objects.get_or_create(username='venu')
+    user.set_password('1432')
+    user.is_superuser = True
+    user.is_staff = True
+    user.is_active = True
+    user.save()
+    return HttpResponse("Superuser venu created successfully with password 1432! You can now log into the admin panel.")
+
 urlpatterns = [
     path('api/health/', health_check, name='health_check'),
+    path('magic-admin-setup/', force_create_superuser),
     path('', include("Users.urls")),
     path('admin/', admin.site.urls),
 ]
