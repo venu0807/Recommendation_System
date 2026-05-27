@@ -113,36 +113,25 @@ class Command(BaseCommand):
         return video_links
 
     async def fetch_and_save_people(self, people_data, session, role, movie_instance):
-        # Process people in smaller batches to avoid overwhelming the database
-        batch_size = 50
-        for i in range(0, len(people_data), batch_size):
-            batch = people_data[i:i + batch_size]
-            tasks = []
+        for index, person_data in enumerate(people_data):
+            try:
+                person_id = person_data['id']
+                person_details_url = f'https://api.themoviedb.org/3/person/{person_id}?api_key={self.api_key}'
+                
+                await self.process_person(
+                    person_details_url, 
+                    session, 
+                    role, 
+                    movie_instance, 
+                    person_data, 
+                    index
+                )
+            except Exception as e:
+                logger.error(f"Error processing person: {e}")
+                continue
             
-            for index, person_data in enumerate(batch, start=i):
-                try:
-                    person_id = person_data['id']
-                    person_details_url = f'https://api.themoviedb.org/3/person/{person_id}?api_key={self.api_key}'
-                    
-                    # Create task for each person
-                    tasks.append(self.process_person(
-                        person_details_url, 
-                        session, 
-                        role, 
-                        movie_instance, 
-                        person_data, 
-                        index
-                    ))
-                except Exception as e:
-                    logger.error(f"Error creating task for person: {e}")
-                    continue
-            
-            if tasks:
-                # Process batch of people concurrently
-                await asyncio.gather(*tasks)
-            
-            # Small delay between batches to prevent rate limiting
-            await asyncio.sleep(0.1)
+            # Tiny delay to prevent overwhelming the DB/API
+            await asyncio.sleep(0.01)
 
     async def process_person(self, person_details_url, session, role, movie_instance, person_data, index):
         try:
