@@ -30,6 +30,9 @@ def force_create_superuser(request):
     user.save()
     return HttpResponse("Superuser venu created successfully with password 1432! You can now log into the admin panel.")
 
+from django.db import transaction
+
+@transaction.atomic
 def load_movies(request):
     from django.core.management import call_command
     from Users.models import MovieModel, GenreModel, PersonModel, ProductionCompanyModel, KeywordModel, MovieCastModel, MovieCrewModel
