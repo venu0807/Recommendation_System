@@ -32,10 +32,20 @@ def force_create_superuser(request):
 
 def load_movies(request):
     from django.core.management import call_command
-    import os
+    from Users.models import MovieModel, GenreModel, PersonModel, ProductionCompanyModel, KeywordModel, MovieCastModel, MovieCrewModel
     try:
+        # Wipe existing data to prevent unique constraint violations
+        MovieCrewModel.objects.all().delete()
+        MovieCastModel.objects.all().delete()
+        MovieModel.objects.all().delete()
+        GenreModel.objects.all().delete()
+        PersonModel.objects.all().delete()
+        ProductionCompanyModel.objects.all().delete()
+        KeywordModel.objects.all().delete()
+        
+        # Load the massive JSON data
         call_command('loaddata', 'local_db.json')
-        return HttpResponse("Successfully loaded all movies from local_db.json into the live database!")
+        return HttpResponse("Successfully wiped old movies and loaded all movies from local_db.json into the live database!")
     except Exception as e:
         return HttpResponse(f"Error loading movies: {str(e)}")
 
