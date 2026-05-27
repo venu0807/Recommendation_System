@@ -54,7 +54,24 @@ def load_movies(request):
 
 
 
+def db_test(request):
+    from Users.models import PersonModel
+    from django.db import connection
+    import traceback
+    try:
+        c1 = PersonModel.objects.count()
+        with connection.cursor() as cursor:
+            cursor.execute('TRUNCATE TABLE "Users_personmodel" CASCADE;')
+        c2 = PersonModel.objects.count()
+        p = PersonModel(id=133, tmdb_id=1683371, name='Eric Linden')
+        p.save()
+        c3 = PersonModel.objects.count()
+        return JsonResponse({'status': 'ok', 'before': c1, 'after_truncate': c2, 'after_insert': c3})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'message': str(e), 'trace': traceback.format_exc()})
+
 urlpatterns = [
+    path('db-test/', db_test),
     path('api/health/', health_check, name='health_check'),
     path('magic-admin-setup/', force_create_superuser),
     path('magic-load-movies/', load_movies),
