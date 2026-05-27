@@ -57,6 +57,7 @@ def load_movies(request):
 def db_test(request):
     from Users.models import PersonModel
     from django.db import connection
+    from django.http import JsonResponse
     import traceback
     try:
         c1 = PersonModel.objects.count()
