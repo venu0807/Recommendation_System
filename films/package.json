@@ -2,7 +2,7 @@
   "name": "films",
   "version": "0.1.0",
   "private": true,
-  "homepage": "https://venu0807.github.io/Recommendation_System",
+  "homepage": ".",
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
@@ -15,7 +15,6 @@
     "react": "^18.2.0",
     "react-content-loader": "^6.2.0",
     "react-dom": "^18.2.0",
-
     "react-router-dom": "^6.20.1",
     "react-scripts": "5.0.1"
   },
@@ -46,6 +45,9 @@
     ]
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
     "gh-pages": "^6.3.0",
     "web-vitals": "^4.2.4"
   }

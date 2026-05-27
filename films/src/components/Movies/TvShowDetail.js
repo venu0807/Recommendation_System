@@ -166,7 +166,7 @@ export default function TvShowDetail() {
     );
   }
 
-  if (!show) {
+  if (!show || show.detail === "Not found.") {
     return <div className="container mt-5">TV Show not found</div>;
   }
 

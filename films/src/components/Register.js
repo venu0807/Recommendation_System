@@ -4,11 +4,23 @@ import { useContext } from 'react';
 import { UserContext } from './Context';
 
 const Register = () => {
-  const { registerUser, formData, handleChange } = useContext(UserContext);
+  const { registerUser } = useContext(UserContext);
   const [step, setStep] = useState(1);
-  
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    firstname: "",
+    lastname: "",
+    password: "",
+    confirmPassword: "",
+  });
 
- 
+  const handleChange = (e) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value
+    });
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();

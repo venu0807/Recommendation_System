@@ -93,8 +93,8 @@ const HomePage = React.memo(() => {
                       <img
                         src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                         alt={movie.title}
-                        className="card-img-top"
-                        style={{ height: '400px', objectFit: 'cover' }}
+                        className="card-img-top responsive-poster"
+                        loading="lazy"
                       />
                       <div className="card-body">
                         <h5 className="card-title">{movie.title}</h5>
@@ -126,8 +126,7 @@ const HomePage = React.memo(() => {
                     <img
                       src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                       alt={movie.title}
-                      className="card-img-top"
-                      style={{ height: '400px', objectFit: 'cover' }}
+                      className="card-img-top responsive-poster"
                     />
                     <div className="card-body">
                       <h5 className="card-title">{movie.title}</h5>
@@ -158,8 +157,7 @@ const HomePage = React.memo(() => {
                     <img
                       src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                       alt={movie.title}
-                      className="card-img-top"
-                      style={{ height: '400px', objectFit: 'cover' }}
+                      className="card-img-top responsive-poster"
                     />
                     <div className="card-body">
                       <h5 className="card-title">{movie.title}</h5>

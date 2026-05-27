@@ -14,21 +14,24 @@ from pathlib import Path
 import os
 from datetime import timedelta
 import dj_database_url
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+load_dotenv(BASE_DIR / '.env')
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-1##xrh*l8l!yo8@kf)2rr6o__&r^7=xlce&3s%(gf%tx%d!!ir'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'default-insecure-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
 
 # Application definition
@@ -107,11 +110,20 @@ MIDDLEWARE = [
 REST_FRAMEWORK = {
 
     'DEFAULT_AUTHENTICATION_CLASSES': (
+        'Users.authentication.CookieJWTAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle'
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '1000/minute',
+        'user': '1000/minute'
+    }
 }
 
 
@@ -137,15 +149,15 @@ TEMPLATES = [
 WSGI_APPLICATION = 'Movies.wsgi.application'
 ASGI_APPLICATION = 'Movies.asgi.application'
 
-# Optionally configure channel layers for production (e.g., Redis)
-# CHANNEL_LAYERS = {
-#     'default': {
-#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
-#         'CONFIG': {
-#             'hosts': [os.environ.get('REDIS_URL', 'redis://localhost:6379/0')],
-#         },
-#     },
-# }
+# Configure channel layers for production (Redis)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            'hosts': [os.environ.get('REDIS_URL', 'redis://redis:6379/0')],
+        },
+    },
+}
 
 
 # Database
@@ -154,9 +166,11 @@ ASGI_APPLICATION = 'Movies.asgi.application'
 DATABASES = {
     'default': {
        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'movies',
-        'USER': 'moviesuser',
-        'PASSWORD':'0807',
+        'NAME': os.environ.get('DB_NAME', 'movies'),
+        'USER': os.environ.get('DB_USER', 'moviesuser'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+        'HOST': os.environ.get('DB_HOST', 'db'),
+        'PORT': os.environ.get('DB_PORT', '3306'),
         'OPTIONS': {
             'charset': 'utf8mb4',
         },
@@ -214,10 +228,44 @@ MEDIA_ROOT = BASE_DIR / 'mediafiles'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
+CORS_ALLOW_CREDENTIALS = True
 
 
-TMDB_API_KEY = '57b5f1654695efb88db0e9b69b632b82'
-TMDB_API_URL = 'https://api.themoviedb.org/3'
+TMDB_API_KEY = os.environ.get('TMDB_API_KEY', '')
+TMDB_API_URL = os.environ.get('TMDB_API_URL', 'https://api.themoviedb.org/3')
 
 
+# SRE: Observability and Telemetry Configuration
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json': {
+            'format': '{ "time": "%(asctime)s", "level": "%(levelname)s", "message": "%(message)s" }',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'json',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': os.environ.get('DJANGO_LOG_LEVEL', 'INFO'),
+    },
+}
+
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        traces_sample_rate=1.0,
+        send_default_pii=True
+    )

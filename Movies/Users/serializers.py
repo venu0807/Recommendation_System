@@ -64,6 +64,9 @@ class KeywordSerializer(serializers.ModelSerializer):
         model = KeywordModel
         fields = '__all__'
 
+    def get_tmdb_url(self, obj):
+        return f"https://www.themoviedb.org/keyword/{obj.tmdb_id}"
+
 
 class ProductionCompanySerializer(serializers.ModelSerializer):
     tmdb_url = serializers.SerializerMethodField()
@@ -72,6 +75,9 @@ class ProductionCompanySerializer(serializers.ModelSerializer):
         model = ProductionCompanyModel
         fields = '__all__'
 
+    def get_tmdb_url(self, obj):
+        return f"https://www.themoviedb.org/company/{obj.tmdb_id}"
+
 class MovieSerializer(serializers.ModelSerializer):
     genres = GenreSerializer(many=True, read_only=True)
     cast = MovieCastSerializer(many=True, read_only=True)
@@ -79,8 +85,8 @@ class MovieSerializer(serializers.ModelSerializer):
     recommendation_source = serializers.CharField(required=False)
     match_score = serializers.IntegerField(required=False)
     similarity_score = serializers.FloatField(required=False)
-    keyword = KeywordSerializer(many=True, read_only=True)
-    productioncompany = ProductionCompanySerializer(many=True, read_only=True)
+    keywords = KeywordSerializer(many=True, read_only=True)
+    production_companies = ProductionCompanySerializer(many=True, read_only=True)
     average_rating = serializers.SerializerMethodField()
     tmdb_url = serializers.SerializerMethodField()
 
@@ -90,6 +96,9 @@ class MovieSerializer(serializers.ModelSerializer):
 
     def get_average_rating(self, obj):
         """Get the average rating for the movie."""
+        if hasattr(obj, 'annotated_average_rating') and obj.annotated_average_rating is not None:
+            return round(obj.annotated_average_rating, 2)
+            
         avg_rating = RatingModel.objects.filter(movie=obj).aggregate(Avg('rating'))['rating__avg']
         return round(avg_rating, 2) if avg_rating else None
 

@@ -7,17 +7,8 @@ export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
   const wsRef = useRef(null);
-  const [authTokens, setAuthTokens] = useState(() => {
-    return localStorage.getItem("authTokens")
-      ? JSON.parse(localStorage.getItem("authTokens"))
-      : null;
-  });
-
-  const [user, setUser] = useState(() => {
-    return localStorage.getItem("authTokens")
-      ? jwtDecode(localStorage.getItem("authTokens"))
-      : null;
-  });
+  const [authTokens, setAuthTokens] = useState(null);
+  const [user, setUser] = useState(null);
 
   const [movies, setMovies] = useState([]);
   const [upcomingMovies, setUpcomingMovies] = useState([]);
@@ -50,14 +41,7 @@ export const UserProvider = ({ children }) => {
     notInterestedMovies: [],
   });
 
-  const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    firstname: "",
-    lastname: "",
-    password: "",
-    confirmPassword: "",
-  });
+
 
   // Fetch user profile data
   const fetchUserProfile = async () => {
@@ -125,17 +109,12 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
-  };
 
-  const registerUser = async (e) => {
+
+  const registerUser = async (e, registerData) => {
     e.preventDefault();
     const { username, email, firstname, lastname, password, confirmPassword } =
-      formData;
+      registerData;
 
     if (
       !username ||
@@ -178,6 +157,7 @@ export const UserProvider = ({ children }) => {
     const response = await fetch("http://127.0.0.1:8000/token/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify({
         username: e.target.username.value,
         password: e.target.password.value,
@@ -189,7 +169,6 @@ export const UserProvider = ({ children }) => {
     if (response.status === 200) {
       setAuthTokens(data);
       setUser(jwtDecode(data.access));
-      localStorage.setItem("authTokens", JSON.stringify(data));
       await fetchUserProfile();
       navigate("/");
     } else {
@@ -200,7 +179,6 @@ export const UserProvider = ({ children }) => {
   const logoutUser = () => {
     setAuthTokens(null);
     setUser(null);
-    localStorage.removeItem("authTokens");
     navigate("/");
   };
 
@@ -217,6 +195,7 @@ export const UserProvider = ({ children }) => {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ refresh: authTokens.refresh }),
       });
 
@@ -229,7 +208,6 @@ export const UserProvider = ({ children }) => {
       const data = await response.json();
       setAuthTokens(data);
       setUser(jwtDecode(data.access));
-      localStorage.setItem("authTokens", JSON.stringify(data));
 
       if (loading) {
         setLoading(false);
@@ -822,12 +800,10 @@ export const UserProvider = ({ children }) => {
     }
   }, [user, preferredMovies, ratedMovies]);
 
-  const contextValue = {
+  const contextValue = React.useMemo(() => ({
     authTokens,
     user,
     registerUser,
-    handleChange,
-    formData,
     loginUser,
     logoutUser,
     updateToken,
@@ -867,7 +843,12 @@ export const UserProvider = ({ children }) => {
     tvShowsTopRated,
     tvShowsOnAir,
     fetchTvShows,
-  };
+  }), [
+    authTokens, user, movies, upcomingMovies, nowplayingMovies, trendingMovies, 
+    topratedMovies, preferredMovies, ratedMovies, cast, loading, favorites, 
+    watchlist, notifications, watchHistory, searchHistory, preferences, 
+    recommendationLoading, tvShowsPopular, tvShowsTopRated, tvShowsOnAir
+  ]);
 
   console.log('Context render - loading:', loading, 'user:', !!user, 'movies count:', trendingMovies.length);
   

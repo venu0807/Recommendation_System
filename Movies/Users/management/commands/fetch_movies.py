@@ -15,7 +15,7 @@ class Command(BaseCommand):
     api_key = '57b5f1654695efb88db0e9b69b632b82'  # Replace with your actual TMDB API key
     max_concurrent_requests = 20  # Limit concurrent requests per batch
     retries = 3  # Max retries for API requests
-    max_movies = 100000  # Target number of movies to fetch
+    max_movies = 100  # Target number of movies to fetch
 
     def clean_date(self, date_string):
         """Clean and format the release date to a valid format."""

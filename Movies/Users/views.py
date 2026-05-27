@@ -26,6 +26,9 @@ from django.utils import timezone
 from django.db import models
 import re
 from .serializers import TVShowRatingSerializer, FavoriteTVShowsSerializer, TVShowWatchlistSerializer, TVShowReviewSerializer
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+from .services import get_search_results
 
 logger = logging.getLogger(__name__)
 
@@ -48,8 +51,37 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 class MyTokenObtainPairView(TokenObtainPairView):
     serializer_class = MyTokenObtainPairSerializer
 
+    def post(self, request, *args, **kwargs):
+        response = super().post(request, *args, **kwargs)
+        if response.status_code == 200:
+            access_token = response.data.get('access')
+            refresh_token = response.data.get('refresh')
+            
+            response.set_cookie(
+                'access_token',
+                access_token,
+                httponly=True,
+                samesite='Lax',
+                secure=False,  # Set to True in production with HTTPS
+                max_age=300
+            )
+            response.set_cookie(
+                'refresh_token',
+                refresh_token,
+                httponly=True,
+                samesite='Lax',
+                secure=False,
+                max_age=3600 * 24 * 90
+            )
+            
+            # Optionally remove tokens from the JSON body so frontend doesn't store them
+            # del response.data['access']
+            # del response.data['refresh']
+        return response
 
-@csrf_exempt
+
+@api_view(['POST'])
+@permission_classes([AllowAny])
 def register_user(request):
     if request.method == 'POST':
         data = json.loads(request.body.decode('utf-8'))
@@ -83,7 +115,7 @@ def register_user(request):
             return JsonResponse({'detail': 'User registered successfully'}, status=201)
         except Exception as e:
             logger.error(f"Error creating user: {str(e)}")
-            return JsonResponse({'detail': str(e)}, status=500)
+            return JsonResponse({'detail': 'An error occurred during registration. Please try again later.'}, status=500)
     else:
         return JsonResponse({'detail': 'Invalid request method'}, status=405)
 
@@ -135,7 +167,11 @@ class UserPreferenceViewSet(viewsets.ModelViewSet):
 
 # Advanced Movie ViewSet
 class MovieViewSet(viewsets.ModelViewSet):
-    queryset = MovieModel.objects.all()
+    queryset = MovieModel.objects.all().prefetch_related(
+        'genres', 'cast', 'crew', 'keywords', 'production_companies'
+    ).annotate(
+        annotated_average_rating=Avg('ratingmodel__rating')
+    )
     serializer_class = MovieSerializer
     permission_classes = [AllowAny]
     pagination_class = StandardResultsSetPagination
@@ -144,18 +180,21 @@ class MovieViewSet(viewsets.ModelViewSet):
     ordering_fields = ['release_date', 'average_rating']
 
 
+    @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def trending_today(self, request):
         trending_movies = get_trending_movies()
         serializer = self.get_serializer(trending_movies, many=True)
         return Response(serializer.data)
     
+    @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def trending_this_week(self, request):
         trending_movies = get_trending_movies_last_week()  # Implement this function to get trending movies of the week
         serializer = self.get_serializer(trending_movies, many=True)
         return Response(serializer.data)
     
+    @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def popular(self, request):
         popular_movies = get_popular_movies()
@@ -272,54 +311,7 @@ class MovieViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def search(self, request):
         query = request.query_params.get('query', '').strip()
-        results = {
-            'movies': [],
-            'persons': [],
-            'genres': []
-        }
-
-        if query:
-            # Normalize the query by converting it to lowercase (keeping spaces intact)
-            normalized_query = query.lower()
-    
-            # Clean the query to remove special characters (but keep spaces)
-            cleaned_query = re.sub(r'[^a-zA-Z0-9\s]', '', normalized_query)
-
-            # Debugging: Print the original, normalized, and cleaned queries
-            print(f"Original Query: {query}")
-            print(f"Normalized Query: {normalized_query}")
-            print(f"Cleaned Query: {cleaned_query}")
-    
-            # Search for movies using the normalized query and cleaned query
-            movies = MovieModel.objects.filter(
-                Q(title__icontains=normalized_query) | 
-                Q(title__icontains=cleaned_query)
-            ).distinct()
-            results['movies'] = MovieSerializer(movies, many=True).data
-
-            # Search for persons (name or alias), normalize and clean the query
-            person_query = Q()
-            for part in query.split():
-                part_cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', part)
-    
-                # Search by part (with spaces), cleaned part (without special characters), and part with no spaces
-                person_query |= Q(name__icontains=part) | Q(also_known_as__contains=part)
-                person_query |= Q(name__icontains=part_cleaned) | Q(also_known_as__contains=part_cleaned)
-
-            # Add the full normalized and cleaned query (with and without spaces) to search for persons
-            person_query |= Q(name__icontains=normalized_query) | Q(also_known_as__contains=normalized_query)
-            person_query |= Q(name__icontains=cleaned_query) | Q(also_known_as__contains=cleaned_query)
-
-            persons = PersonModel.objects.filter(person_query).distinct()
-            results['persons'] = PersonSerializer(persons, many=True).data
-    
-            # Search for genres using the normalized query and cleaned query
-            genres = GenreModel.objects.filter(
-                Q(name__icontains=normalized_query) | 
-                Q(name__icontains=cleaned_query)
-            ).distinct()
-            results['genres'] = GenreSerializer(genres, many=True).data
-
+        results = get_search_results(query)
         return Response(results)
 
    
@@ -439,7 +431,7 @@ class PersonViewSet(viewsets.ModelViewSet):
             ).annotate(
                 role_type=models.Value('cast', output_field=models.CharField()),
                 role=models.F('cast__character')
-            )
+            ).prefetch_related('genres', 'cast', 'crew')
 
             # Get crew movies
             crew_movies = MovieModel.objects.filter(
@@ -447,7 +439,7 @@ class PersonViewSet(viewsets.ModelViewSet):
             ).annotate(
                 role_type=models.Value('crew', output_field=models.CharField()),
                 role=models.F('crew__job')
-            )
+            ).prefetch_related('genres', 'cast', 'crew')
 
             # Combine and sort all movies
             all_movies = cast_movies.union(crew_movies).order_by('-release_date')

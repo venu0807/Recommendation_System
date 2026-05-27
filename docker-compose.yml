@@ -1,7 +1,9 @@
 version: '3.8'
 services:
   backend:
-    build: ./Movies
+    build:
+      context: .
+      dockerfile: Movies/Dockerfile
     command: daphne -b 0.0.0.0 -p 8000 Movies.asgi:application
     volumes:
       - ./Movies:/app

@@ -447,17 +447,27 @@ def dynamic_recommendations(user, limit=10):
 
 # Trending Movies (Based on vote_average)
 def get_trending_movies(num_movies=20):
-    return MovieModel.objects.filter(poster_path__isnull=False).order_by('-vote_average')[:num_movies]
+    return MovieModel.objects.filter(poster_path__isnull=False).prefetch_related(
+        'genres', 'cast', 'crew', 'keywords', 'production_companies'
+    ).annotate(
+        annotated_average_rating=Avg('ratingmodel__rating')
+    ).order_by('-vote_average')[:num_movies]
 
 # Trending Movies Last Week (Based on popularity)
 def get_trending_movies_last_week(num_movies=20):
     one_week_ago = timezone.now() - timedelta(days=7)
-    return MovieModel.objects.filter(release_date__gte=one_week_ago, poster_path__isnull=False).order_by('-popularity')[:num_movies]
+    return MovieModel.objects.filter(release_date__gte=one_week_ago, poster_path__isnull=False).prefetch_related(
+        'genres', 'cast', 'crew', 'keywords', 'production_companies'
+    ).annotate(
+        annotated_average_rating=Avg('ratingmodel__rating')
+    ).order_by('-popularity')[:num_movies]
 
 # Popular Movies (Based on popularity)
 def get_popular_movies(num_movies=20):
-    return MovieModel.objects.filter(poster_path__isnull=False).annotate(
-        average_rating=Avg('ratingmodel__rating')
+    return MovieModel.objects.filter(poster_path__isnull=False).prefetch_related(
+        'genres', 'cast', 'crew', 'keywords', 'production_companies'
+    ).annotate(
+        annotated_average_rating=Avg('ratingmodel__rating')
     ).order_by('-popularity')[:num_movies]
 
 def get_upcoming_movies(num_movies=20):
@@ -467,12 +477,24 @@ def get_upcoming_movies(num_movies=20):
         release_date__gte=today,
         release_date__lte=end_date,
         poster_path__isnull=False
+    ).prefetch_related(
+        'genres', 'cast', 'crew', 'keywords', 'production_companies'
+    ).annotate(
+        annotated_average_rating=Avg('ratingmodel__rating')
     ).order_by('-release_date', '-popularity')[:num_movies]
 
 # Now Playing Movies
 def get_now_playing_movies(num_movies=20):
-    return MovieModel.objects.filter(release_date__lte=timezone.now(), poster_path__isnull=False).order_by('-release_date')[:num_movies]
+    return MovieModel.objects.filter(release_date__lte=timezone.now(), poster_path__isnull=False).prefetch_related(
+        'genres', 'cast', 'crew', 'keywords', 'production_companies'
+    ).annotate(
+        annotated_average_rating=Avg('ratingmodel__rating')
+    ).order_by('-release_date')[:num_movies]
 
 # Top Rated Movies (Based on votes and ratings)
 def get_top_rated_movies(num_movies=20):
-    return MovieModel.objects.filter(release_date__lte=timezone.now(), poster_path__isnull=False).order_by('-vote_count', '-vote_average')[:num_movies]
+    return MovieModel.objects.filter(release_date__lte=timezone.now(), poster_path__isnull=False).prefetch_related(
+        'genres', 'cast', 'crew', 'keywords', 'production_companies'
+    ).annotate(
+        annotated_average_rating=Avg('ratingmodel__rating')
+    ).order_by('-vote_count', '-vote_average')[:num_movies]

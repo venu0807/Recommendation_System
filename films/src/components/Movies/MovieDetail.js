@@ -117,8 +117,13 @@ export default function MovieDetail() {
     );
   }
 
-  if (!movie) {
-    return <div>Loading...</div>;
+  if (!movie || movie.detail === "Not found.") {
+    return (
+      <div className="container mt-5">
+        <h3>Movie not found or the database is currently empty.</h3>
+        <Link to="/" className="btn btn-primary mt-3">Back to Home</Link>
+      </div>
+    );
   }
 
   const castToDisplay = movie.cast ? movie.cast.slice(0, 10) : [];
@@ -222,6 +227,7 @@ export default function MovieDetail() {
                 src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
                 alt={movie.title}
                 className="movie-poster-img lazyload"
+                loading="lazy"
               />
             </div>
             <div className="movie-right">
@@ -328,20 +334,10 @@ export default function MovieDetail() {
                 )}
               </div>
               <p>{movie.overview}</p>
-              <div className="crew-container" style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(3, 1fr)', 
-                gridTemplateRows: 'repeat(2, auto)',
-                gap: '1rem',
-                maxWidth: '100%'
-              }}>
+              <div className="crew-container crew-grid">
                 {crewToDisplay.length > 0 ? (
                   crewToDisplay.slice(0, 6).map((crewMember) => (
-                    <div key={crewMember.id} className="crew-member" style={{
-                      padding: '5px',
-                      backgroundColor: 'rgba(255,255,255,0.05)',
-                      borderRadius: '8px'
-                    }}>
+                    <div key={crewMember.id} className="crew-member crew-item">
                       <Link
                         to={`/person/${crewMember.member}/${formatTitle(
                           crewMember.name
@@ -398,6 +394,7 @@ export default function MovieDetail() {
                           alt={castMember.name}
                           className="card-img-top"
                           height={150}
+                          loading="lazy"
                         />
                       ) : (
                         <h5>
