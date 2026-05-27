@@ -514,7 +514,7 @@ export const UserProvider = ({ children }) => {
 
     try {
         const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/favorites/${movieId}/remove/`, {
-            method: `DELETE",
+            method: "DELETE",
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
             },
@@ -592,7 +592,7 @@ export const UserProvider = ({ children }) => {
 
     try {
         const response = await fetch(`${(process.env.REACT_APP_API_URL || 'https://movies-backend-ophs.onrender.com')}/watchlist/${movieId}/remove/`, {
-            method: `DELETE",
+            method: "DELETE",
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
             },
