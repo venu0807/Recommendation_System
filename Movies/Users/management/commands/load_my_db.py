@@ -19,8 +19,12 @@ class Command(BaseCommand):
                 TRUNCATE TABLE "Users_tvshowmodel" CASCADE;
             ''')
         
-        self.stdout.write(self.style.SUCCESS('Loading database from local_db.json...'))
-        call_command('loaddata', 'local_db.json')
+        from django.conf import settings
+        import os
+        
+        fixture_path = os.path.join(settings.BASE_DIR, 'local_db.json')
+        self.stdout.write(self.style.SUCCESS(f'Loading database from {fixture_path}...'))
+        call_command('loaddata', fixture_path)
         
         # Clear the cache because we just replaced the database
         from django.core.cache import cache
