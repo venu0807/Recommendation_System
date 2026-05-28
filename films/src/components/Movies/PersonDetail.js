@@ -14,7 +14,7 @@ const PersonDetail = () => {
       try {
         setLoading(true);
         // Fetch person details
-        const personResponse = await fetch(`${'https://movies-backend-ophs.onrender.com'}/person/${id}/`);
+        const personResponse = await fetch(`${'http://127.0.0.1:8000'}/person/${id}/`);
         if (!personResponse.ok) {
           throw new Error('Person not found');
         }
@@ -22,7 +22,7 @@ const PersonDetail = () => {
         setPerson(personData);
 
         // Fetch person's movies
-        const moviesResponse = await fetch(`${'https://movies-backend-ophs.onrender.com'}/person/${id}/movies/`);
+        const moviesResponse = await fetch(`${'http://127.0.0.1:8000'}/person/${id}/movies/`);
         if (!moviesResponse.ok) {
           throw new Error('Could not fetch movies');
         }

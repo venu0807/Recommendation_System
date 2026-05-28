@@ -3,8 +3,17 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import MinMaxScaler
-from surprise import SVD, Reader, Dataset
-from surprise.model_selection import train_test_split
+try:
+    from surprise import SVD, Reader, Dataset
+    from surprise.model_selection import train_test_split
+    SURPRISE_AVAILABLE = True
+except ImportError:
+    SURPRISE_AVAILABLE = False
+    SVD = object
+    Reader = object
+    Dataset = object
+    import logging
+    logging.getLogger(__name__).warning("scikit-surprise is not installed. Collaborative filtering is disabled.")
 from django.db.models import Q, Avg, Count, Case, When, Sum, F
 from ..models import *
 from django.utils import timezone
@@ -17,7 +26,10 @@ logger = logging.getLogger(__name__)
 
 class AdvancedRecommender:
     def __init__(self):
-        self.svd_model = SVD(n_factors=100, n_epochs=20, lr_all=0.005, reg_all=0.02)
+        if SURPRISE_AVAILABLE:
+            self.svd_model = SVD(n_factors=100, n_epochs=20, lr_all=0.005, reg_all=0.02)
+        else:
+            self.svd_model = None
         self.min_max_scaler = MinMaxScaler()
         self.tfidf = TfidfVectorizer(stop_words='english')
         
@@ -30,6 +42,8 @@ class AdvancedRecommender:
 
     def train_model(self):
         """Train the SVD model"""
+        if not SURPRISE_AVAILABLE:
+            return
         try:
             data = self.prepare_data()
             trainset = data.build_full_trainset()
@@ -93,8 +107,9 @@ class AdvancedRecommender:
             
             for movie in all_movies:
                 try:
-                    predicted_rating = self.svd_model.predict(user_id, movie.id).est
-                    cf_scores[movie.id] = predicted_rating
+                    if SURPRISE_AVAILABLE and self.svd_model:
+                        predicted_rating = self.svd_model.predict(user_id, movie.id).est
+                        cf_scores[movie.id] = predicted_rating
                 except Exception as e:
                     logger.error(f"Error predicting rating: {str(e)}")
 

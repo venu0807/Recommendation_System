@@ -20,12 +20,12 @@ export default function Toprated() {
 
   useEffect(() => {
     const fetchGenres = async () => {
-      const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/genre/`);
+      const response = await fetch(`${'http://127.0.0.1:8000'}/genre/`);
       const data = await response.json();
       setGenres(data);
     };
     const fetchKeywords = async () => {
-      const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/keyword/`);
+      const response = await fetch(`${'http://127.0.0.1:8000'}/keyword/`);
       const data = await response.json();
       setKeywords(data);
     };

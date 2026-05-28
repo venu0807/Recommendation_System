@@ -49,7 +49,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens?.access) return;
     
     try {
-      const response = await fetch('https://movies-backend-ophs.onrender.com/api/user/me/', {
+      const response = await fetch('http://127.0.0.1:8000/api/user/me/', {
         headers: {
           Authorization: `Bearer ${authTokens.access}`,
         },
@@ -76,7 +76,7 @@ export const UserProvider = ({ children }) => {
     });
     try {
       // First get the current user profile to get the ID
-      const profileResponse = await fetch('https://movies-backend-ophs.onrender.com/api/user/me/', {
+      const profileResponse = await fetch('http://127.0.0.1:8000/api/user/me/', {
         headers: {
           Authorization: `Bearer ${authTokens?.access}`,
         },
@@ -89,7 +89,7 @@ export const UserProvider = ({ children }) => {
       const currentProfile = await profileResponse.json();
       
       // Update using the ViewSet endpoint
-      const response = await fetch(`https://movies-backend-ophs.onrender.com/user/${currentProfile.id}/`, {
+      const response = await fetch(`http://127.0.0.1:8000/user/${currentProfile.id}/`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${authTokens?.access}`,
@@ -129,7 +129,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-      const registerResponse = await fetch("https://movies-backend-ophs.onrender.com/register/", {
+      const registerResponse = await fetch("http://127.0.0.1:8000/register/", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -155,7 +155,7 @@ export const UserProvider = ({ children }) => {
 
   const loginUser = async (e) => {
     e.preventDefault();
-    const response = await fetch("https://movies-backend-ophs.onrender.com/token/", {
+    const response = await fetch("http://127.0.0.1:8000/token/", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -191,7 +191,7 @@ export const UserProvider = ({ children }) => {
         return;
       }
 
-      const response = await fetch("https://movies-backend-ophs.onrender.com/token/refresh/", {
+      const response = await fetch("http://127.0.0.1:8000/token/refresh/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -313,11 +313,11 @@ export const UserProvider = ({ children }) => {
         trendingResponse,
         topRatedResponse,
       ] = await Promise.allSettled([
-        fetch(`${'https://movies-backend-ophs.onrender.com'}/movie/popular/`),
-        fetch(`${'https://movies-backend-ophs.onrender.com'}/movie/upcoming/`),
-        fetch(`${'https://movies-backend-ophs.onrender.com'}/movie/now_playing/`),
-        fetch(`${'https://movies-backend-ophs.onrender.com'}/movie/trending_today/`),
-        fetch(`${'https://movies-backend-ophs.onrender.com'}/movie/top_rated/`),
+        fetch(`${'http://127.0.0.1:8000'}/movie/popular/`),
+        fetch(`${'http://127.0.0.1:8000'}/movie/upcoming/`),
+        fetch(`${'http://127.0.0.1:8000'}/movie/now_playing/`),
+        fetch(`${'http://127.0.0.1:8000'}/movie/trending_today/`),
+        fetch(`${'http://127.0.0.1:8000'}/movie/top_rated/`),
       ]);
 
       let hasData = false;
@@ -384,7 +384,7 @@ export const UserProvider = ({ children }) => {
     try {
       console.log("Fetching personalized movies...");
       const response = await fetch(
-        `${'https://movies-backend-ophs.onrender.com'}/movie/user_recommendations/`,
+        `${'http://127.0.0.1:8000'}/movie/user_recommendations/`,
         {
           method: "GET",
           headers: {
@@ -432,7 +432,7 @@ export const UserProvider = ({ children }) => {
 
     try {
       console.log("Rating movie:", { movieId, rating, feedback });
-      const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/movie/rate/`, {
+      const response = await fetch(`${'http://127.0.0.1:8000'}/movie/rate/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authTokens.access}`,
@@ -462,7 +462,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return;
     
     try {
-        const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/favorites/my_favorites/`, {
+        const response = await fetch(`${'http://127.0.0.1:8000'}/favorites/my_favorites/`, {
             headers: {
                 'Authorization': `Bearer ${authTokens.access}`,
                 'Content-Type': 'application/json',
@@ -486,7 +486,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-        const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/favorites/add/`, {
+        const response = await fetch(`${'http://127.0.0.1:8000'}/favorites/add/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -514,7 +514,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return false;
 
     try {
-        const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/favorites/${movieId}/remove/`, {
+        const response = await fetch(`${'http://127.0.0.1:8000'}/favorites/${movieId}/remove/`, {
             method: "DELETE",
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
@@ -540,7 +540,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return;
     
     try {
-        const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/watchlist/my_watchlist/`, {
+        const response = await fetch(`${'http://127.0.0.1:8000'}/watchlist/my_watchlist/`, {
             headers: {
                 'Authorization': `Bearer ${authTokens.access}`,
                 'Content-Type': 'application/json',
@@ -564,7 +564,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-        const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/watchlist/add/`, {
+        const response = await fetch(`${'http://127.0.0.1:8000'}/watchlist/add/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -592,7 +592,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return false;
 
     try {
-        const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/watchlist/${movieId}/remove/`, {
+        const response = await fetch(`${'http://127.0.0.1:8000'}/watchlist/${movieId}/remove/`, {
             method: "DELETE",
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
@@ -656,9 +656,9 @@ export const UserProvider = ({ children }) => {
   const fetchTvShows = async () => {
     try {
       const [popularRes, topRatedRes, onAirRes] = await Promise.all([
-        fetch(`${'https://movies-backend-ophs.onrender.com'}/tv/popular/`),
-        fetch(`${'https://movies-backend-ophs.onrender.com'}/tv/top_rated/`),
-        fetch(`${'https://movies-backend-ophs.onrender.com'}/tv/on_air/`),
+        fetch(`${'http://127.0.0.1:8000'}/tv/popular/`),
+        fetch(`${'http://127.0.0.1:8000'}/tv/top_rated/`),
+        fetch(`${'http://127.0.0.1:8000'}/tv/on_air/`),
       ]);
       if (popularRes.ok) setTvShowsPopular(await popularRes.json());
       if (topRatedRes.ok) setTvShowsTopRated(await topRatedRes.json());

@@ -13,7 +13,7 @@ const Favorites = () => {
     if (!authTokens) return;
     setIsUpdating(true);
     try {
-      const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/favorites/my_favorites/`, {
+      const response = await fetch(`${'http://127.0.0.1:8000'}/favorites/my_favorites/`, {
         headers: {
           'Authorization': `Bearer ${authTokens.access}`,
           'Content-Type': 'application/json',

@@ -12,7 +12,7 @@ const Profile = () => {
   // Use extended profile info if available
   const profile = user.profile || {};
   const avatarUrl = profile.avatar
-    ? (profile.avatar.startsWith('http') ? profile.avatar : `https://movies-backend-ophs.onrender.com${profile.avatar}`)
+    ? (profile.avatar.startsWith('http') ? profile.avatar : `http://127.0.0.1:8000${profile.avatar}`)
     : null;
 
   return (

@@ -852,7 +852,6 @@ class KeywordViewSet(viewsets.ModelViewSet):
     from .serializers import KeywordSerializer
     serializer_class = KeywordSerializer
     permission_classes = [AllowAny]
-    pagination_class = StandardResultsSetPagination
     filter_backends = [filters.SearchFilter]
     search_fields = ['name']
 

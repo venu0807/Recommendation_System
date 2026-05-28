@@ -15,7 +15,7 @@ export default function SearchResults() {
       setLoading(true);
       setError(null);
       try {
-        const url = `${'https://movies-backend-ophs.onrender.com'}/movie/search?query=${query}&department=${activeDepartment}`;
+        const url = `${'http://127.0.0.1:8000'}/movie/search?query=${query}&department=${activeDepartment}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch results');
         const data = await response.json();

@@ -40,7 +40,7 @@ export default function PersonComponent() {
         }
 
         // If not in context, fetch from API
-        const response = await fetch(`${'https://movies-backend-ophs.onrender.com'}/movie/${id}/`);
+        const response = await fetch(`${'http://127.0.0.1:8000'}/movie/${id}/`);
         const data = await response.json();
         // Defensive: ensure cast/crew are always arrays
         if (!Array.isArray(data.cast)) data.cast = [];
