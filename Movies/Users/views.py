@@ -351,7 +351,10 @@ class MovieViewSet(viewsets.ModelViewSet):
             from channels.layers import get_channel_layer
             from asgiref.sync import async_to_sync
             from .serializers import MovieSerializer
-            from .recommender.recommendations import get_user_recommendations
+            from .recommender.recommendations import get_user_recommendations, clear_user_recommendations_cache
+
+            # Invalidate cached recommendations so they recompute with the new rating
+            clear_user_recommendations_cache(user.username)
 
             channel_layer = get_channel_layer()
             rec_result = get_user_recommendations(user.username)

@@ -7,17 +7,28 @@ from django.utils import timezone
 from datetime import timedelta
 import logging
 from django.db import models
+from django.core.cache import cache
 
 logger = logging.getLogger(__name__)
 
+# Cache configuration
+RECS_CACHE_TTL = 60 * 15  # 15 minutes for user recommendations
+TFIDF_CACHE_TTL = 60 * 30  # 30 minutes for TF-IDF matrix
+LIST_CACHE_TTL = 60 * 10  # 10 minutes for list endpoints
+
+
+# ──────────────────────────────────────────────
+#  USER-MOVIE MATRIX (for collaborative filtering)
+# ──────────────────────────────────────────────
+
 def create_user_movie_matrix():
-    # Get ratings from the database
+    """Build a user-movie rating matrix as a DataFrame. Used by collaborative filtering."""
     ratings = RatingModel.objects.all().values('user_id', 'movie_id', 'rating')
     logger.info(f"Ratings data: {list(ratings)}")
 
     if not ratings:
         logger.warning("No ratings found in the database.")
-        return pd.DataFrame()  
+        return pd.DataFrame()
 
     df = pd.DataFrame(ratings)
     if not {'user_id', 'movie_id', 'rating'}.issubset(df.columns):
@@ -28,7 +39,35 @@ def create_user_movie_matrix():
     logger.debug(f"User movie matrix head: {user_movie_matrix.head()}")
     return user_movie_matrix
 
+
+# ──────────────────────────────────────────────
+#  USER RECOMMENDATIONS (with caching)
+# ──────────────────────────────────────────────
+
 def get_user_recommendations(user_id, num_recommendations=10):
+    """Cached wrapper around the user recommendation engine."""
+    cache_key = f'user_recs_{user_id}_{num_recommendations}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        logger.info(f"Cache hit for user {user_id}")
+        return cached
+
+    result = _compute_user_recommendations(user_id, num_recommendations)
+    cache.set(cache_key, result, RECS_CACHE_TTL)
+    logger.info(f"Cached recommendations for user {user_id}")
+    return result
+
+
+def clear_user_recommendations_cache(user_id, cache_sizes=None):
+    """Invalidate cached recommendations for a user. Called after rating a movie."""
+    if cache_sizes is None:
+        cache_sizes = [5, 10, 20]
+    for num in cache_sizes:
+        cache.delete(f'user_recs_{user_id}_{num}')
+    logger.info(f"Cleared recommendation cache for user {user_id}")
+
+
+def _compute_user_recommendations(user_id, num_recommendations=10):
     try:
         logger.info(f"Starting recommendations for user_id: {user_id}")
         
@@ -159,36 +198,76 @@ def get_user_recommendations(user_id, num_recommendations=10):
         }
 
     except Exception as e:
-        logger.error(f"Error in get_user_recommendations: {str(e)}", exc_info=True)
+        logger.error(f"Error in _compute_user_recommendations: {str(e)}", exc_info=True)
         return {
             'recommendations': get_trending_movies(num_recommendations),
             'rated_movies': []
         }
 
-# Content-Based Filtering
-def create_movie_features():
-    movies = MovieModel.objects.all()
-    features = []
-    for movie in movies:
-        # Use title, genres, and overview for features
-        features.append(f"{movie.title} {' '.join([genre.name for genre in movie.genres.all()])} {movie.overview}")
-    return features
 
-def get_movie_recommendations(movie_id, num_recommendations=10):
-    movies = MovieModel.objects.all()
-    features = create_movie_features()
+# ──────────────────────────────────────────────
+#  CONTENT-BASED FILTERING (with cached TF-IDF)
+# ──────────────────────────────────────────────
+
+def _get_tfidf_matrix():
+    """Build or retrieve cached TF-IDF cosine similarity matrix and movie IDs."""
+    cache_key = 'tfidf_matrix_data'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        logger.info("TF-IDF cache hit")
+        return cached['matrix'], cached['movie_ids']
+
+    movies = MovieModel.objects.all().prefetch_related('genres')
+    features = []
+    movie_ids = []
+    for movie in movies:
+        genres_str = ' '.join([g.name for g in movie.genres.all()])
+        features.append(f"{movie.title} {genres_str} {movie.overview or ''}")
+        movie_ids.append(movie.id)
+
+    if not features:
+        logger.warning("No movies found for TF-IDF matrix")
+        return None, []
 
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(features)
-
     cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
-    movie_idx = list(movies.values_list('id', flat=True)).index(movie_id)
+
+    cache.set(cache_key, {'matrix': cosine_sim, 'movie_ids': movie_ids}, TFIDF_CACHE_TTL)
+    logger.info(f"Cached TF-IDF matrix for {len(movie_ids)} movies")
+    return cosine_sim, movie_ids
+
+
+def clear_tfidf_cache():
+    """Invalidate the TF-IDF matrix cache. Called when new movies are added."""
+    cache.delete('tfidf_matrix_data')
+    logger.info("Cleared TF-IDF matrix cache")
+
+
+def get_movie_recommendations(movie_id, num_recommendations=10):
+    """Content-based recommendations with cached TF-IDF matrix."""
+    cache_key = f'movie_recs_{movie_id}_{num_recommendations}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        logger.info(f"Cache hit for movie {movie_id}")
+        return MovieModel.objects.filter(id__in=cached)
+
+    cosine_sim, movie_ids = _get_tfidf_matrix()
+    if cosine_sim is None:
+        return MovieModel.objects.none()
+
+    try:
+        movie_idx = movie_ids.index(movie_id)
+    except ValueError:
+        logger.warning(f"Movie {movie_id} not found in TF-IDF matrix")
+        return MovieModel.objects.none()
+
     sim_scores = list(enumerate(cosine_sim[movie_idx]))
-
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
-    movie_indices = [i[0] for i in sim_scores[1:num_recommendations + 1]]
+    rec_ids = [movie_ids[i[0]] for i in sim_scores[1:num_recommendations + 1]]
 
-    return movies.filter(id__in=[movies[i].id for i in movie_indices])
+    cache.set(cache_key, rec_ids, RECS_CACHE_TTL)
+    return MovieModel.objects.filter(id__in=rec_ids)
 
 # Hybrid Recommendations (Collaborative + Content-Based)
 def hybrid_recommendations(user_id, movie_id=None, num_recommendations=10):
@@ -240,35 +319,74 @@ def dynamic_recommendations(user, limit=10):
 
     return recommendations
 
-# Trending Movies (Based on vote_average)
+# ──────────────────────────────────────────────
+#  LIST ENDPOINTS (with caching)
+# ──────────────────────────────────────────────
+
+def clear_all_list_caches():
+    """Invalidate all cached list endpoints. Called when movies are added/updated."""
+    for num in [5, 10, 20, 50]:
+        for prefix in ['trending_movies_', 'trending_week_', 'popular_movies_',
+                       'upcoming_movies_', 'now_playing_', 'top_rated_movies_']:
+            cache.delete(f'{prefix}{num}')
+    logger.info("Cleared all list endpoint caches")
+
+
 def get_trending_movies(num_movies=20):
-    return MovieModel.objects.filter(poster_path__isnull=False).prefetch_related(
+    """Trending Movies (Based on vote_average)."""
+    cache_key = f'trending_movies_{num_movies}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    result = list(MovieModel.objects.filter(poster_path__isnull=False).prefetch_related(
         'genres', 'cast', 'crew', 'keywords', 'production_companies'
     ).annotate(
         annotated_average_rating=Avg('ratingmodel__rating')
-    ).order_by('-vote_average')[:num_movies]
+    ).order_by('-vote_average')[:num_movies])
+    cache.set(cache_key, result, LIST_CACHE_TTL)
+    return result
 
-# Trending Movies Last Week (Based on popularity)
+
 def get_trending_movies_last_week(num_movies=20):
+    """Trending Movies Last Week (Based on popularity)."""
+    cache_key = f'trending_week_{num_movies}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
     one_week_ago = timezone.now() - timedelta(days=7)
-    return MovieModel.objects.filter(release_date__gte=one_week_ago, poster_path__isnull=False).prefetch_related(
+    result = list(MovieModel.objects.filter(release_date__gte=one_week_ago, poster_path__isnull=False).prefetch_related(
         'genres', 'cast', 'crew', 'keywords', 'production_companies'
     ).annotate(
         annotated_average_rating=Avg('ratingmodel__rating')
-    ).order_by('-popularity')[:num_movies]
+    ).order_by('-popularity')[:num_movies])
+    cache.set(cache_key, result, LIST_CACHE_TTL)
+    return result
 
-# Popular Movies (Based on popularity)
+
 def get_popular_movies(num_movies=20):
-    return MovieModel.objects.filter(poster_path__isnull=False).prefetch_related(
+    """Popular Movies (Based on popularity)."""
+    cache_key = f'popular_movies_{num_movies}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    result = list(MovieModel.objects.filter(poster_path__isnull=False).prefetch_related(
         'genres', 'cast', 'crew', 'keywords', 'production_companies'
     ).annotate(
         annotated_average_rating=Avg('ratingmodel__rating')
-    ).order_by('-popularity')[:num_movies]
+    ).order_by('-popularity')[:num_movies])
+    cache.set(cache_key, result, LIST_CACHE_TTL)
+    return result
+
 
 def get_upcoming_movies(num_movies=20):
+    """Upcoming Movies (next 14 days)."""
+    cache_key = f'upcoming_movies_{num_movies}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
     today = timezone.now()
     end_date = today + timedelta(days=14)
-    return MovieModel.objects.filter(
+    result = list(MovieModel.objects.filter(
         release_date__gte=today,
         release_date__lte=end_date,
         poster_path__isnull=False
@@ -276,20 +394,36 @@ def get_upcoming_movies(num_movies=20):
         'genres', 'cast', 'crew', 'keywords', 'production_companies'
     ).annotate(
         annotated_average_rating=Avg('ratingmodel__rating')
-    ).order_by('-release_date', '-popularity')[:num_movies]
+    ).order_by('-release_date', '-popularity')[:num_movies])
+    cache.set(cache_key, result, LIST_CACHE_TTL)
+    return result
 
-# Now Playing Movies
+
 def get_now_playing_movies(num_movies=20):
-    return MovieModel.objects.filter(release_date__lte=timezone.now(), poster_path__isnull=False).prefetch_related(
+    """Now Playing Movies."""
+    cache_key = f'now_playing_{num_movies}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    result = list(MovieModel.objects.filter(release_date__lte=timezone.now(), poster_path__isnull=False).prefetch_related(
         'genres', 'cast', 'crew', 'keywords', 'production_companies'
     ).annotate(
-        annotated_average_rating=Avg('ratingmodel__rating')
-    ).order_by('-release_date')[:num_movies]
+        annotated_average_rating=Avg('ratingmodel__rating'
+    )).order_by('-release_date')[:num_movies])
+    cache.set(cache_key, result, LIST_CACHE_TTL)
+    return result
 
-# Top Rated Movies (Based on votes and ratings)
+
 def get_top_rated_movies(num_movies=20):
-    return MovieModel.objects.filter(release_date__lte=timezone.now(), poster_path__isnull=False).prefetch_related(
+    """Top Rated Movies (Based on votes and ratings)."""
+    cache_key = f'top_rated_movies_{num_movies}'
+    cached = cache.get(cache_key)
+    if cached is not None:
+        return cached
+    result = list(MovieModel.objects.filter(release_date__lte=timezone.now(), poster_path__isnull=False).prefetch_related(
         'genres', 'cast', 'crew', 'keywords', 'production_companies'
     ).annotate(
         annotated_average_rating=Avg('ratingmodel__rating')
-    ).order_by('-vote_count', '-vote_average')[:num_movies]
+    ).order_by('-vote_count', '-vote_average')[:num_movies])
+    cache.set(cache_key, result, LIST_CACHE_TTL)
+    return result

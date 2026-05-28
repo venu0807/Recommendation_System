@@ -871,7 +871,10 @@ class RecommendationEngineTest(ModelTestBase):
 
     def test_get_user_recommendations_with_ratings(self):
         """When user has ratings, should get personalized recommendations."""
+        from django.core.cache import cache
         from .recommender.recommendations import get_user_recommendations
+        # Clear any cached entry from previous tests
+        cache.delete(f'user_recs_{self.user.username}_5')
         # Create a rating on the action movie
         RatingModel.objects.create(user=self.user, movie=self.movie, rating=Decimal('9.0'))
         result = get_user_recommendations(self.user.username, num_recommendations=5)
