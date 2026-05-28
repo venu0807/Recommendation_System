@@ -32,28 +32,16 @@ def force_create_superuser(request):
 
 from django.db import transaction
 
-@transaction.atomic
 def load_movies(request):
-    from django.core.management import call_command
-    from Users.models import MovieModel, GenreModel, PersonModel, ProductionCompanyModel, KeywordModel, MovieCastModel, MovieCrewModel
+    import subprocess
+    import sys
+    from django.http import JsonResponse
     try:
-        from django.db import connection
-        with connection.cursor() as cursor:
-            cursor.execute('''
-                TRUNCATE TABLE "Users_moviecrewmodel" CASCADE;
-                TRUNCATE TABLE "Users_moviecastmodel" CASCADE;
-                TRUNCATE TABLE "Users_moviemodel" CASCADE;
-                TRUNCATE TABLE "Users_genremodel" CASCADE;
-                TRUNCATE TABLE "Users_personmodel" CASCADE;
-                TRUNCATE TABLE "Users_productioncompanymodel" CASCADE;
-                TRUNCATE TABLE "Users_keywordmodel" CASCADE;
-            ''')
-        
-        # Load the massive JSON data
-        call_command('loaddata', 'local_db.json')
-        return HttpResponse("Successfully wiped old movies and loaded all movies from local_db.json into the live database!")
+        log_file = open('/app/load_db_log.txt', 'w')
+        subprocess.Popen([sys.executable, 'manage.py', 'load_my_db'], stdout=log_file, stderr=subprocess.STDOUT)
+        return JsonResponse({'status': 'Database wipe and load started in the background! Please check back in a few minutes.'})
     except Exception as e:
-        return HttpResponse(f"Error loading movies: {str(e)}")
+        return JsonResponse({'status': 'error', 'message': str(e)})
 
 
 
