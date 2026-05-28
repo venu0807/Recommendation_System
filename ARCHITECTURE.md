@@ -1,84 +1,132 @@
 # 🏗️ Recommendation System Architecture
 
-This document outlines the high-level system architecture, data flow, and infrastructure design of the Movie Recommendation Platform.
+This document outlines the system architecture, data flow, and key design decisions of the Movie Recommendation Platform.
 
 ## 🌟 System Overview
-The platform is a decoupled client-server architecture consisting of a **React SPA (Single Page Application)** frontend and a **Django REST Framework (DRF)** backend. It uses **MySQL** as the primary relational database and **Redis** for WebSocket layer management and health checks.
+The platform is a decoupled client-server architecture:
+- **Frontend:** React 18 SPA (Single Page Application) with Context API state management
+- **Backend:** Django REST Framework (DRF) with Django Channels for WebSockets
+- **Database:** SQLite (development) / PostgreSQL (production)
+- **Cache:** In-memory `LocMemCache` (development) / Redis (production)
 
-```mermaid
-graph TD
-    Client[Web Browser] -->|HTTP / WSS| Nginx[Nginx Reverse Proxy]
-    Nginx -->|Static Assets| React[React SPA]
-    Nginx -->|API Requests| Daphne[Daphne ASGI Server]
-    Daphne --> Django[Django Application]
-    Django --> MySQL[(MySQL Database)]
-    Django --> Redis[(Redis Cache/Channels)]
+```
+Browser  ──HTTP──>  Django (ASGI/WSGI)  ──>  SQLite/PostgreSQL
+                         │
+                    [Recommendation Engine]
+                         │
+                    [Django Cache Framework]
 ```
 
 ---
 
 ## 🎨 Frontend Architecture (React)
 
-The frontend is built with React 18 and relies heavily on Context API for state management.
-
 ### State Management (`Context.js`)
-The `UserProvider` acts as the central nervous system of the application:
-1. **Boot Fetching:** On initial load, it fetches `/movie/popular/` and `/movie/upcoming/` concurrently using `Promise.allSettled`.
-2. **Memoization:** To prevent render-cascading across the app, the massive `contextValue` is wrapped in `useMemo`.
-3. **Local Fallbacks:** Input fields (like login/register forms) manage their state locally to prevent global re-renders on every keystroke.
+The `UserProvider` acts as the central state manager:
+1. **Boot Fetching:** On initial load, fetches `/movie/popular/` and `/movie/upcoming/` concurrently using `Promise.allSettled`.
+2. **Memoization:** Wraps the massive `contextValue` in `useMemo` to prevent cascading re-renders.
+3. **Local Fallbacks:** Login/register forms hold their own state locally.
 
-### Performance Optimizations
-- **Image Lazy Loading:** Heavy image assets (like TMDB posters) use the native `loading="lazy"` attribute, vastly improving Time to Interactive (TTI) and First Contentful Paint (FCP).
+### Performance
+- **Image Lazy Loading:** TMDB poster images use native `loading="lazy"`.
+
+### Test Coverage
+- 231 frontend tests across 33 test files (Jest + React Testing Library).
+- Covers: authentication, API fetching, routing, error boundaries, all major components.
 
 ---
 
 ## ⚙️ Backend Architecture (Django)
 
-The backend is an asynchronous Django application served by Daphne to support WebSockets.
+### Tech Stack
+- **Framework:** Django 5.2 + DRF 3.17
+- **Authentication:** JWT via `rest_framework_simplejwt` with httpOnly cookies
+- **Real-Time:** Django Channels (in-memory layer for dev, Redis for production)
+- **Documentation:** drf-spectacular (Swagger + ReDoc)
+- **Testing:** 103 backend tests covering models, views, serializers, and the recommendation engine
 
 ### Authentication Flow
-We use **JWT (JSON Web Tokens)** via `rest_framework_simplejwt`.
-- The `/token/` endpoint issues short-lived `access` tokens and long-lived `refresh` tokens.
-- Protected views demand valid tokens, and the frontend gracefully redirects to `/login` if intercepted.
+1. `POST /token/` issues short-lived `access` (5min) and long-lived `refresh` (30 day) tokens
+2. Tokens stored in httpOnly cookies (accessible to JS via cookie-based auth)
+3. Custom `CookieJWTAuthentication` class reads tokens from cookies
 
-### Real-Time Features (Channels)
-Django Channels provides the backbone for real-time capabilities.
-- **Channel Layer:** Powered by `channels_redis`, allowing ASGI workers to communicate across processes.
-- The Redis instance operates on `redis://redis:6379/0`.
-
----
-
-## 🚢 Infrastructure & Deployment
-
-We use a fully containerized Docker architecture orchestrated by `docker-compose.prod.yml`.
-
-### The Container Topology
-1. **Frontend (Nginx):** A multi-stage Docker build compiles the React static bundle and serves it via an `nginx:alpine` image. We use a custom `nginx.conf` for SPA routing (`try_files $uri $uri/ /index.html`).
-2. **Backend (Daphne):** The Django app collects static files on build and serves traffic via Daphne ASGI on port 8000.
-3. **Database (MySQL 8):** Persists user data, watchlists, and movie references.
-4. **Cache (Redis 7):** Handles WebSocket channel layers and acts as a ping-target for health checks.
+### Key ViewSets
+| ViewSet | Endpoints | Auth |
+|---------|-----------|------|
+| `MovieViewSet` | `/movie/` — list, search, trending, popular, upcoming, recommendations, rate | AllowAny (list), IsAuthenticated (rate) |
+| `WatchlistViewSet` | `/watchlist/` — add, remove, my_watchlist | IsAuthenticated |
+| `FavoriteViewSet` | `/favorites/` — add, remove, my_favorites | IsAuthenticated |
+| `RatingViewSet` | `/rating/` — my_ratings, bulk_delete | IsAuthenticated |
+| `TVShowViewSet` | `/tv/` — list, popular, top_rated, on_air | AllowAny |
 
 ---
 
-## 🦅 SRE & Observability (The Canary Workflow)
+## 🧠 Recommendation Engine
 
-### Deep Health Checks
-The `/api/health/` endpoint actively verifies connectivity. It does not just return HTTP 200; it attempts to:
-1. Ping the MySQL database (`connection.ensure_connection()`).
-2. Ping the Redis cluster (`r.ping()`).
-If either fails, the load balancer is notified via a HTTP 503 response.
+The engine lives in `Movies/Users/recommender/recommendations.py` and has **3 caching layers**:
 
-### Docker Auto-Healing
-All services in `docker-compose.prod.yml` contain `healthcheck` definitions:
-```yaml
-healthcheck:
-  test: ["CMD", "curl", "-f", "http://localhost:8000/api/health/"]
-  interval: 30s
-  timeout: 10s
-  retries: 3
+| Cache | Key Pattern | TTL | Invalidated |
+|-------|-------------|-----|-------------|
+| User recs | `user_recs_{username}_{num}` | 15 min | On rating a movie |
+| TF-IDF matrix | `tfidf_matrix_data` | 30 min | Manual call |
+| List endpoints | `trending_movies_20`, etc. | 10 min | Manual call |
+
+### How Recommendations Work
+1. **With ratings:** Finds your highest-rated movie → matches by genre + language → scores by genre overlap count → dedupes → returns top N
+2. **Without ratings:** Falls back to trending/popular movies
+3. **Movie similarity:** TF-IDF vectorization on (title + genres + overview) → cosine similarity
+
+### Cache Invalidation
+When a user rates a movie via `POST /movie/rate/`, the system:
+1. Clears `user_recs_{username}_5`, `_10`, `_20`
+2. Recomputes recommendations
+3. Pushes updated recs via WebSocket to the user
+
+---
+
+## 🦅 Observability
+
+### Health Check
 ```
-If a container fails 3 consecutive checks, Docker will automatically restart it.
+GET /api/health/
+→ 200 {"status": "ok", "database": "connected"}
+```
 
-### Structured Logging & Crash Reporting (Sentry)
-- **Structured Logs:** Django's `LOGGING` dictionary is configured to output pure JSON, making it ingestible for Datadog or ELK stacks.
-- **Sentry SDK:** Automatically intercepts unhandled exceptions, attaching tracebacks and user request context. Enabled by supplying the `SENTRY_DSN` environment variable.
+### Logging
+All logs are output in JSON format for structured ingestion:
+```json
+{ "time": "2026-05-28 12:00:00", "level": "INFO", "message": "Cached recommendations for user testuser" }
+```
+
+### Crash Reporting (Optional)
+Set `SENTRY_DSN` in `.env` to forward unhandled exceptions to Sentry.
+
+---
+
+## 📂 Project Structure
+
+```
+Recommendation_System/
+├── Movies/                     # Django backend
+│   ├── Movies/                 # Project settings, ASGI/WSGI, URLs
+│   ├── Users/                  # Main application
+│   │   ├── migrations/         # Database migrations
+│   │   ├── recommender/        # ML recommendation engine with caching
+│   │   │   └── recommendations.py
+│   │   ├── management/commands/# fetch_movies, remove_duplicates
+│   │   ├── models.py           # 20+ models (Movie, TVShow, Person, etc.)
+│   │   ├── views.py            # ViewSets and API views
+│   │   ├── serializers.py      # DRF serializers
+│   │   ├── services.py         # Business logic (search)
+│   │   ├── consumers.py        # WebSocket consumers
+│   │   ├── authentication.py   # Custom JWT cookie auth
+│   │   └── tests.py            # 103 tests
+│   └── staticfiles/            # Collected static assets
+├── films/                      # React frontend
+│   ├── public/                 # Static HTML
+│   └── src/                    # Components, context, styles, tests
+│       ├── components/         # Movie, TV, Profile, Auth, UI components
+│       └── styles/             # CSS files
+├── .env.example                # Environment variable template
+└── requirements.txt            # Python dependencies
+```

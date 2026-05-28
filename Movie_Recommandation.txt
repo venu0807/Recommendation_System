@@ -8,7 +8,40 @@ Movie Trailer Preview: Provide movie trailers or snippets for each movie to help
 
 Movie Database: Integrate a large movie database (like MovieLens or IMDB API) to pull in detailed movie information such as genres, cast, director, release year, and more.
 
+ok
+test_my_watchlist (Users.tests.WatchlistViewSetTest.test_my_watchlist) ... ok
+test_my_watchlist_requires_auth (Users.tests.WatchlistViewSetTest.test_my_watchlist_requires_auth) ... { "time": "2026-05-28 21:43:51,717", "level": "WARNING", "message": "Unauthorized: /watchlist/my_watchlist/" }
+ok
+test_remove_watchlist (Users.tests.WatchlistViewSetTest.test_remove_watchlist) ... ok
 
+----------------------------------------------------------------------
+Ran 103 tests in 43.254s
+
+OKok
+test_my_watchlist (Users.tests.WatchlistViewSetTest.test_my_watchlist) ... ok
+test_my_watchlist_requires_auth (Users.tests.WatchlistViewSetTest.test_my_watchlist_requires_auth) ... { "time": "2026-05-28 21:43:51,717", "level": "WARNING", "message": "Unauthorized: /watchlist/my_watchlist/" }
+ok
+test_remove_watchlist (Users.tests.WatchlistViewSetTest.test_remove_watchlist) ... ok
+
+----------------------------------------------------------------------
+Ran 103 tests in 43.254s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+(.venv) (base) PS D:\Proposals\Recommendation_System> 
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+(.venv) (base) PS D:\Proposals\Recommendation_System> ok
+test_my_watchlist (Users.tests.WatchlistViewSetTest.test_my_watchlist) ... ok
+test_my_watchlist_requires_auth (Users.tests.WatchlistViewSetTest.test_my_watchlist_requires_auth) ... { "time": "2026-05-28 21:43:51,717", "level": "WARNING", "message": "Unauthorized: /watchlist/my_watchlist/" }
+ok
+test_remove_watchlist (Users.tests.WatchlistViewSetTest.test_remove_watchlist) ... ok
+
+----------------------------------------------------------------------
+Ran 103 tests in 43.254s
+
+OK
+Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
+(.venv) (base) PS D:\Proposals\Recommendation_System> 
 Movie Ratings: Users should be able to rate movies and provide feedback (e.g., thumbs up/thumbs down).
 
 

@@ -4,10 +4,29 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
-from .models import *
-from .serializers import *
-from .recommender.recommendations import *
-from django.db.models import Count,Q
+from .models import (
+    UserProfileModel, MovieModel, RatingModel, WatchlistModel,
+    FavoriteMoviesModel, GenreModel, PersonModel, MovieCastModel,
+    MovieCrewModel, ProductionCompanyModel, FeedbackModel,
+    TVShowModel, TVShowRatingModel, FavoriteTVShowsModel,
+    TVShowWatchlistModel, TVShowReviewModel, KeywordModel
+)
+from .serializers import (
+    UserProfileSerializer, MovieSerializer, RatingSerializer,
+    WatchlistSerializer, FavoriteMoviesSerializer, GenreSerializer,
+    PersonSerializer, ProductionCompanySerializer, MovieCastSerializer,
+    MovieCrewSerializer, TVShowSerializer, KeywordSerializer,
+    TVShowRatingSerializer, FavoriteTVShowsSerializer,
+    TVShowWatchlistSerializer, TVShowReviewSerializer
+)
+from .recommender.recommendations import (
+    get_trending_movies, get_trending_movies_last_week,
+    get_popular_movies, get_upcoming_movies, get_now_playing_movies,
+    get_top_rated_movies, get_movie_recommendations,
+    get_user_recommendations, clear_user_recommendations_cache,
+    hybrid_recommendations, dynamic_recommendations
+)
+from django.db.models import Avg, Count, Q
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework import viewsets, status, filters
@@ -25,7 +44,6 @@ from rest_framework.pagination import PageNumberPagination
 from django.utils import timezone
 from django.db import models
 import re
-from .serializers import TVShowRatingSerializer, FavoriteTVShowsSerializer, TVShowWatchlistSerializer, TVShowReviewSerializer
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from .services import get_search_results
@@ -135,37 +153,7 @@ class UserPreferenceViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return UserProfileModel.objects.filter(user=self.request.user)
 
-    # @action(detail=False, methods=['get'])
-    # def personalized_movies(self, request):
-    #     user_profile = self.get_object()
-    #     preferred_movies = user_profile.get_preferred_movies()
-    #     serializer = MovieSerializer(preferred_movies, many=True)
-    #     return Response(serializer.data)
 
-    # @action(detail=False, methods=['get'])
-    # def liked_movies(self, request):
-    #     """Get movies rated by the user."""
-    #     user_profile = self.get_object()
-    #     liked_movies = user_profile.liked_movies()
-    #     serializer = MovieSerializer(liked_movies, many=True)
-    #     return Response(serializer.data)
-
-    # @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
-    # def favorite_movies(self, request):
-    #     """Get user's favorite movies."""
-    #     user_profile = self.get_object()
-    #     favorite_movies = user_profile.favorite_movies()
-    #     serializer = MovieSerializer(favorite_movies, many=True)
-    #     return Response(serializer.data)
-
-    # @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
-    # def watchlist_movies(self, request):
-    #     """Get user's watchlist movies."""
-    #     user_profile = self.get_object()
-    #     watchlist_movies = user_profile.watchlist_movies()
-    #     serializer = MovieSerializer(watchlist_movies, many=True)
-    #     return Response(serializer.data)
-    
 
 # Advanced Movie ViewSet
 class MovieViewSet(viewsets.ModelViewSet):
@@ -398,9 +386,6 @@ class RatingViewSet(viewsets.ModelViewSet):
     serializer_class = RatingSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
-
-    # def perform_create(self, serializer):
-    #     serializer.save(user=self.request.user)
 
     @action(detail=False, methods=['get'])
     def my_ratings(self, request):
@@ -822,7 +807,6 @@ class TVShowViewSet(viewsets.ModelViewSet):
     queryset = TVShowModel.objects.all().prefetch_related(
         'genres', 'cast', 'crew'
     )
-    from .serializers import TVShowSerializer
     serializer_class = TVShowSerializer
     permission_classes = [AllowAny]
     pagination_class = StandardResultsSetPagination
@@ -854,7 +838,6 @@ class TVShowViewSet(viewsets.ModelViewSet):
 
 class KeywordViewSet(viewsets.ModelViewSet):
     queryset = KeywordModel.objects.all()
-    from .serializers import KeywordSerializer
     serializer_class = KeywordSerializer
     permission_classes = [AllowAny]
     filter_backends = [filters.SearchFilter]

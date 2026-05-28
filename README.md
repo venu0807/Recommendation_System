@@ -1,108 +1,134 @@
 # 🎬 Movie Recommendation Platform (TMDB-like, End-to-End)
 
-**Live Demo:** [https://venu0807.github.io/Recommendation_System/](https://venu0807.github.io/Recommendation_System/)
+A full-stack movie recommendation platform inspired by TMDB, built with **React.js** (frontend) and **Django REST Framework** (backend). Features real-time personalized recommendations, JWT authentication, comprehensive automated testing, and a recommendation engine with caching.
 
-This is a professional, full-stack movie recommendation platform inspired by TMDB, built with React.js (frontend), Django REST Framework (backend), and MySQL. It features real-time personalized recommendations, robust authentication, comprehensive automated testing, and a production-grade Docker deployment architecture.
-
-> **Read the Architecture Document:** For a deep dive into the system design, data flow, and SRE observability setup, please read [ARCHITECTURE.md](./ARCHITECTURE.md).
+> **Architecture Document:** For a deep dive into the system design and data flow, see [ARCHITECTURE.md](./ARCHITECTURE.md).
 
 ---
 
-## 🌟 End-to-End Features
+## 🌟 Features
 
-- **User Authentication:** Secure registration, login, logout via JWT.
-- **Movie Discovery:** Browse trending, popular, upcoming, and top-rated movies. Search by title, genre, or year.
+- **User Authentication:** Secure registration, login, logout via JWT (httpOnly cookies).
+- **Movie Discovery:** Browse trending, popular, upcoming, now-playing, and top-rated movies. Search by title, genre, or person.
 - **Movie Details:** Deep-dive into movie overviews, cast & crew, release dates, and trailers.
 - **Social Features:** Rate movies (1-10) and manage personal favorites/watchlists.
-- **Personalized Recommendations:** Hybrid ML recommendations (collaborative filtering, content-based, popularity).
-
----
-
-## 🚀 Deployment (Production)
-
-We use a fully orchestrated, multi-stage Docker environment for production deployment.
-
-1. **Clone the repository:**
-   ```sh
-   git clone https://github.com/yourusername/Recommendation_System.git
-   cd Recommendation_System
-   ```
-2. **Setup environment variables:**
-   ```sh
-   cp .env.example .env
-   ```
-   *Edit `.env` to add your `TMDB_API_KEY`, `SENTRY_DSN` (for crash reporting), and secure database credentials.*
-3. **Deploy the stack:**
-   ```sh
-   docker-compose -f docker-compose.prod.yml up --build -d
-   ```
-   This will spin up:
-   - **Frontend:** A compiled React SPA served lightning-fast via Nginx.
-   - **Backend:** A Django ASGI server running on Daphne.
-   - **Database:** A MySQL 8.0 instance.
-   - **Cache:** A Redis 7 cluster handling WebSockets and healthchecks.
+- **Personalized Recommendations:** Content-based + hybrid ML recommendations with **caching** (15min TTL for user recs, 30min for TF-IDF, 10min for list endpoints). Cache auto-invalidates when you rate a movie.
+- **TV Shows:** Browse popular, top-rated, and on-air TV shows with ratings and watchlists.
+- **Real-Time Updates:** Django Channels pushes updated recommendations after rating via WebSocket.
 
 ---
 
 ## 🛠️ Local Development Setup
 
-If you want to work on the code locally, use the development Compose file.
+### Prerequisites
+- Python 3.11+
+- Node.js 18+
+- npm
 
-1. **Start the development stack:**
-   ```sh
-   docker-compose up --build
-   ```
-   *Note: This runs the React development server (`npm start`) with hot-reloading.*
+### Backend
 
-2. **Access the app:**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:8000
-   - Swagger docs: http://localhost:8000/swagger/
+```sh
+# Clone and enter the project
+cd Recommendation_System
+
+# Create virtual environment and install deps
+python -m venv .venv
+.venv\Scripts\pip install -r requirements.txt
+
+# Copy environment config
+copy .env.example .env
+# Edit .env and add your TMDB_API_KEY
+
+# Run migrations
+.venv\Scripts\python Movies\manage.py migrate
+
+# Start the server
+.venv\Scripts\python Movies\manage.py runserver
+```
+
+### Frontend
+
+```sh
+# In a separate terminal
+cd films
+npm install
+npm start
+```
+
+### Access the app
+- **Frontend:** http://localhost:3000
+- **Backend API:** http://localhost:8000
+- **Swagger docs:** http://localhost:8000/api/docs/
+- **ReDoc:** http://localhost:8000/api/redoc/
 
 ---
 
 ## 🧪 Testing
 
-The frontend utilizes Jest and React Testing Library for regression testing.
+### Backend (103 tests)
+```sh
+.venv\Scripts\python Movies\manage.py test --verbosity=2
+```
 
-To run the test suite locally:
+### Frontend (231 tests)
 ```sh
 cd films
 npm test
 ```
-The test suite covers:
-- Initial boot fetching logic (`Promise.allSettled`).
-- Authentication workflows and JWT parsing.
-- Unauthorized request interception and redirects.
 
 ---
 
-## 🦅 Observability & Monitoring (SRE)
+## 🧠 Recommendation Engine
 
-The application is built with Site Reliability Engineering best practices in mind:
-- **Deep Health Checks:** Hit `/api/health/` to receive a real-time status report on both the Database and Redis layers.
-- **Auto-Healing:** The production docker-compose file includes Docker healthchecks. If a container deadlocks, Docker will automatically restart it.
-- **Crash Reporting:** If you provide a `SENTRY_DSN` in your `.env` file, the backend will automatically intercept unhandled exceptions and send them to Sentry along with structured JSON logs.
+The engine uses **content-based filtering** with TF-IDF vectorization and cosine similarity:
 
----
-
-## 📚 API Endpoints
-
-The full API documentation is available via Swagger at `http://localhost:8000/swagger/` when the backend is running. 
-
-**Quick Reference:**
-- `POST /register/` — Register
-- `POST /token/` — Login (JWT)
-- `GET /api/health/` — System Health Check
-- `GET /movie/trending_today/` — Trending Movies
+- **User Recommendations:** Matches movies by genre + language to your highest-rated movies.
+- **Movie Recommendations:** Finds similar movies via TF-IDF on title, overview, and genres.
+- **Caching:** 3-layer cache (user recs, TF-IDF matrix, list endpoints) with configurable TTLs.
+- **Cache Invalidation:** Your personal recommendations refresh immediately when you rate a movie.
 
 ---
 
-## 📝 Contributing
-1. Fork the repository
-2. Create a new branch
-3. Make your changes and ensure `npm test` passes
-4. Submit a pull request
+## 📚 API Quick Reference
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /register/` | Register a new user |
+| `POST /token/` | Login (JWT) |
+| `GET /movie/trending_today/` | Trending movies |
+| `GET /movie/popular/` | Popular movies |
+| `GET /movie/upcoming/` | Upcoming movies |
+| `GET /movie/{id}/recommendations/` | Similar movies |
+| `GET /movie/user_recommendations/` | Personalized recs |
+| `POST /movie/rate/` | Rate a movie |
+| `GET /api/health/` | System health check |
+| `GET /api/docs/` | Swagger documentation |
+
+---
+
+## 🦅 Observability
+
+- **Health Checks:** `GET /api/health/` verifies DB connectivity.
+- **Structured Logging:** JSON-formatted logs for ELK/Datadog ingestion.
+- **Crash Reporting:** Optional Sentry integration via `SENTRY_DSN` env var.
+
+---
+
+## 📂 Project Structure
+
+```
+Recommendation_System/
+├── Movies/              # Django backend
+│   ├── Movies/          # Project settings
+│   └── Users/           # Main app (models, views, serializers, recommender)
+│       └── recommender/ # Recommendation engine with caching
+├── films/               # React frontend
+│   └── src/             # Components, context, styles
+├── .env.example         # Environment template
+└── requirements.txt     # Python dependencies
+```
+
+---
 
 ## 📄 License
-MIT License — see LICENSE
+MIT License
