@@ -53,6 +53,9 @@ def read_log(request):
             return HttpResponse(f.read(), content_type='text/plain')
     return HttpResponse("Log file not found.")
 
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
 def exec_code(request):
     import sys
     import io
