@@ -743,7 +743,7 @@ export const UserProvider = ({ children }) => {
         console.log('Setting loading to false due to timeout fallback');
         setLoading(false);
       }
-    }, 5000); // 5 second timeout
+    }, 30000); // 30 second timeout
 
     return () => clearTimeout(timeoutId);
   }, [fetchDataCallback, loading]);

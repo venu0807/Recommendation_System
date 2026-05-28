@@ -829,21 +829,21 @@ class TVShowViewSet(viewsets.ModelViewSet):
     @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def popular(self, request):
-        popular_shows = TVShowModel.objects.filter(poster_path__isnull=False).order_by('-popularity')[:20]
+        popular_shows = self.get_queryset().filter(poster_path__isnull=False).order_by('-popularity')[:20]
         serializer = self.get_serializer(popular_shows, many=True)
         return Response(serializer.data)
 
     @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def top_rated(self, request):
-        top_rated_shows = TVShowModel.objects.filter(poster_path__isnull=False).order_by('-vote_average', '-vote_count')[:20]
+        top_rated_shows = self.get_queryset().filter(poster_path__isnull=False).order_by('-vote_average', '-vote_count')[:20]
         serializer = self.get_serializer(top_rated_shows, many=True)
         return Response(serializer.data)
 
     @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def on_air(self, request):
-        on_air_shows = TVShowModel.objects.filter(poster_path__isnull=False).order_by('-first_air_date')[:20]
+        on_air_shows = self.get_queryset().filter(poster_path__isnull=False).order_by('-first_air_date')[:20]
         serializer = self.get_serializer(on_air_shows, many=True)
         return Response(serializer.data)
 
