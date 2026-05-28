@@ -45,6 +45,14 @@ def load_movies(request):
 
 
 
+def read_log(request):
+    import os
+    from django.http import HttpResponse
+    if os.path.exists('/app/load_db_log.txt'):
+        with open('/app/load_db_log.txt', 'r') as f:
+            return HttpResponse(f.read(), content_type='text/plain')
+    return HttpResponse("Log file not found.")
+
 def db_test(request):
     from Users.models import PersonModel
     from django.db import connection
@@ -64,6 +72,7 @@ def db_test(request):
 
 urlpatterns = [
     path('db-test/', db_test),
+    path('read-log/', read_log),
     path('api/health/', health_check, name='health_check'),
     path('magic-admin-setup/', force_create_superuser),
     path('magic-load-movies/', load_movies),
