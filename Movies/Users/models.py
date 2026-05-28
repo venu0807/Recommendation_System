@@ -108,9 +108,9 @@ class UserProfileModel(models.Model):
     
     def get_preferred_movies(self):
         preferred_movies = MovieModel.objects.filter(
-            Q(movies__in=self.preferred_movies.all()) |
+            Q(id__in=self.preferred_movies.all()) |
             Q(genres__in=self.preferred_genres.all()) |
-            Q(actor__in=self.preferred_actors.all())
+            Q(cast__member__in=self.preferred_actors.all())
         ).distinct()
 
         if not self.preferred_genres.exists() and not self.preferred_actors.exists():
@@ -179,7 +179,7 @@ class MovieModel(models.Model):
         return self.title
 
     def delete(self, *args, **kwargs):
-        self.is_active = timezone.now()
+        self.is_active = False
         self.save()
 
     def average_rating(self):

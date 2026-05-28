@@ -2,8 +2,7 @@
 import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
 import { jwtDecode } from "jwt-decode";
 import { useNavigate } from "react-router-dom";
-import ErrorBoundary from './ErrorBoundary';
-
+import API_BASE_URL from "../config";
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
@@ -49,7 +48,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens?.access) return;
     
     try {
-      const response = await fetch('http://127.0.0.1:8000/api/user/me/', {
+      const response = await fetch(`${API_BASE_URL}/api/user/me/`, {
         headers: {
           Authorization: `Bearer ${authTokens.access}`,
         },
@@ -76,7 +75,7 @@ export const UserProvider = ({ children }) => {
     });
     try {
       // First get the current user profile to get the ID
-      const profileResponse = await fetch('http://127.0.0.1:8000/api/user/me/', {
+      const profileResponse = await fetch(`${API_BASE_URL}/api/user/me/`, {
         headers: {
           Authorization: `Bearer ${authTokens?.access}`,
         },
@@ -89,7 +88,7 @@ export const UserProvider = ({ children }) => {
       const currentProfile = await profileResponse.json();
       
       // Update using the ViewSet endpoint
-      const response = await fetch(`http://127.0.0.1:8000/user/${currentProfile.id}/`, {
+      const response = await fetch(`${API_BASE_URL}/user/${currentProfile.id}/`, {
         method: 'PUT',
         headers: {
           Authorization: `Bearer ${authTokens?.access}`,
@@ -129,7 +128,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-      const registerResponse = await fetch("http://127.0.0.1:8000/register/", {
+      const registerResponse = await fetch(`${API_BASE_URL}/register/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -155,7 +154,7 @@ export const UserProvider = ({ children }) => {
 
   const loginUser = async (e) => {
     e.preventDefault();
-    const response = await fetch("http://127.0.0.1:8000/token/", {
+    const response = await fetch(`${API_BASE_URL}/token/`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -191,7 +190,7 @@ export const UserProvider = ({ children }) => {
         return;
       }
 
-      const response = await fetch("http://127.0.0.1:8000/token/refresh/", {
+      const response = await fetch(`${API_BASE_URL}/token/refresh/`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -313,11 +312,11 @@ export const UserProvider = ({ children }) => {
         trendingResponse,
         topRatedResponse,
       ] = await Promise.allSettled([
-        fetch(`${'http://127.0.0.1:8000'}/movie/popular/`),
-        fetch(`${'http://127.0.0.1:8000'}/movie/upcoming/`),
-        fetch(`${'http://127.0.0.1:8000'}/movie/now_playing/`),
-        fetch(`${'http://127.0.0.1:8000'}/movie/trending_today/`),
-        fetch(`${'http://127.0.0.1:8000'}/movie/top_rated/`),
+        fetch(`${API_BASE_URL}/movie/popular/`),
+        fetch(`${API_BASE_URL}/movie/upcoming/`),
+        fetch(`${API_BASE_URL}/movie/now_playing/`),
+        fetch(`${API_BASE_URL}/movie/trending_today/`),
+        fetch(`${API_BASE_URL}/movie/top_rated/`),
       ]);
 
       let hasData = false;
@@ -384,7 +383,7 @@ export const UserProvider = ({ children }) => {
     try {
       console.log("Fetching personalized movies...");
       const response = await fetch(
-        `${'http://127.0.0.1:8000'}/movie/user_recommendations/`,
+        `${API_BASE_URL}/movie/user_recommendations/`,
         {
           method: "GET",
           headers: {
@@ -432,7 +431,7 @@ export const UserProvider = ({ children }) => {
 
     try {
       console.log("Rating movie:", { movieId, rating, feedback });
-      const response = await fetch(`${'http://127.0.0.1:8000'}/movie/rate/`, {
+      const response = await fetch(`${API_BASE_URL}/movie/rate/`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${authTokens.access}`,
@@ -462,7 +461,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return;
     
     try {
-        const response = await fetch(`${'http://127.0.0.1:8000'}/favorites/my_favorites/`, {
+        const response = await fetch(`${API_BASE_URL}/favorites/my_favorites/`, {
             headers: {
                 'Authorization': `Bearer ${authTokens.access}`,
                 'Content-Type': 'application/json',
@@ -486,7 +485,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-        const response = await fetch(`${'http://127.0.0.1:8000'}/favorites/add/`, {
+        const response = await fetch(`${API_BASE_URL}/favorites/add/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -514,7 +513,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return false;
 
     try {
-        const response = await fetch(`${'http://127.0.0.1:8000'}/favorites/${movieId}/remove/`, {
+        const response = await fetch(`${API_BASE_URL}/favorites/${movieId}/remove/`, {
             method: "DELETE",
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
@@ -540,7 +539,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return;
     
     try {
-        const response = await fetch(`${'http://127.0.0.1:8000'}/watchlist/my_watchlist/`, {
+        const response = await fetch(`${API_BASE_URL}/watchlist/my_watchlist/`, {
             headers: {
                 'Authorization': `Bearer ${authTokens.access}`,
                 'Content-Type': 'application/json',
@@ -564,7 +563,7 @@ export const UserProvider = ({ children }) => {
     }
 
     try {
-        const response = await fetch(`${'http://127.0.0.1:8000'}/watchlist/add/`, {
+        const response = await fetch(`${API_BASE_URL}/watchlist/add/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -592,7 +591,7 @@ export const UserProvider = ({ children }) => {
     if (!authTokens) return false;
 
     try {
-        const response = await fetch(`${'http://127.0.0.1:8000'}/watchlist/${movieId}/remove/`, {
+        const response = await fetch(`${API_BASE_URL}/watchlist/${movieId}/remove/`, {
             method: "DELETE",
             headers: {
                 Authorization: `Bearer ${authTokens.access}`,
@@ -656,9 +655,9 @@ export const UserProvider = ({ children }) => {
   const fetchTvShows = async () => {
     try {
       const [popularRes, topRatedRes, onAirRes] = await Promise.all([
-        fetch(`${'http://127.0.0.1:8000'}/tv/popular/`),
-        fetch(`${'http://127.0.0.1:8000'}/tv/top_rated/`),
-        fetch(`${'http://127.0.0.1:8000'}/tv/on_air/`),
+        fetch(`${API_BASE_URL}/tv/popular/`),
+        fetch(`${API_BASE_URL}/tv/top_rated/`),
+        fetch(`${API_BASE_URL}/tv/on_air/`),
       ]);
       if (popularRes.ok) setTvShowsPopular(await popularRes.json());
       if (topRatedRes.ok) setTvShowsTopRated(await topRatedRes.json());
@@ -671,8 +670,8 @@ export const UserProvider = ({ children }) => {
   // WebSocket connection for real-time recommendations
   useEffect(() => {
     if (!user) return;
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-    const wsUrl = `${wsProtocol}://${window.location.host}/ws/recommendations/`;
+    const wsBase = API_BASE_URL.replace(/^http/, 'ws');
+    const wsUrl = `${wsBase}/ws/recommendations/`;
     wsRef.current = new window.WebSocket(wsUrl);
 
     wsRef.current.onopen = () => {
@@ -845,7 +844,6 @@ export const UserProvider = ({ children }) => {
   console.log('Context render - loading:', loading, 'user:', !!user, 'movies count:', trendingMovies.length);
   
   return (
-    <ErrorBoundary>
       <UserContext.Provider value={contextValue}>
         {loading ? (
           <div className="text-center p-5">
@@ -858,6 +856,5 @@ export const UserProvider = ({ children }) => {
           children
         )}
       </UserContext.Provider>
-    </ErrorBoundary>
   );
 };

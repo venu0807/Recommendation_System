@@ -1,5 +1,6 @@
 import React, { useContext, useState, useEffect } from 'react';
 import { UserContext } from './Context';
+import API_BASE_URL from '../config';
 
 const Settings = () => {
   const { preferences, updatePreferences } = useContext(UserContext);
@@ -9,12 +10,12 @@ const Settings = () => {
 
   useEffect(() => {
     const fetchGenres = async () => {
-      const response = await fetch(`${'http://127.0.0.1:8000'}/genre/`);
+      const response = await fetch(`${API_BASE_URL}/genre/`);
       const data = await response.json();
       setGenres(data);
     };
     const fetchActors = async () => {
-      const response = await fetch(`${'http://127.0.0.1:8000'}/person/`);
+      const response = await fetch(`${API_BASE_URL}/person/`);
       const data = await response.json();
       setActors(data);
     };

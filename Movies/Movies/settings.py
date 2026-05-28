@@ -28,7 +28,7 @@ load_dotenv(BASE_DIR / '.env')
 SECRET_KEY = os.environ.get('SECRET_KEY', 'default-insecure-key')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
@@ -47,12 +47,14 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework_simplejwt.token_blacklist',
     'channels',
+    'drf_spectacular',
+    'drf_spectacular_sidecar',
 ]
 
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(os.environ.get('JWT_REFRESH_DAYS', '30'))),
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
     "UPDATE_LAST_LOGIN": False,
@@ -120,7 +122,8 @@ REST_FRAMEWORK = {
     'DEFAULT_THROTTLE_RATES': {
         'anon': '1000/minute',
         'user': '1000/minute'
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 }
 
 
@@ -146,11 +149,19 @@ TEMPLATES = [
 WSGI_APPLICATION = 'Movies.wsgi.application'
 ASGI_APPLICATION = 'Movies.asgi.application'
 
-# Configure channel layers for production (Redis)
+# Cache configuration
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'movie-recommendation-cache',
+    }
+}
+
+# Configure channel layers for production (Redis), with in-memory fallback for local dev
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer' if os.environ.get('REDIS_URL') is None else 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {} if os.environ.get('REDIS_URL') is None else {
             'hosts': [os.environ.get('REDIS_URL', 'redis://redis:6379/0')],
         },
     },
@@ -205,6 +216,20 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
+# drf-spectacular settings
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'Movies Recommendation API',
+    'DESCRIPTION': 'API for movie recommendations, ratings, watchlists, favorites, and TV show management.',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    'SWAGGER_UI_DIST': 'SIDECAR',
+    'SWAGGER_UI_FAVICON_HREF': 'SIDECAR',
+    'REDOC_DIST': 'SIDECAR',
+    # Preprocess the schema to ensure security schemes work with cookies
+    'POSTPROCESSING_HOOKS': [],
+    'COMPONENT_SPLIT_REQUEST': True,
+}
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'mediafiles'
 
@@ -229,8 +254,9 @@ CORS_ALLOWED_ORIGIN_REGEXES = [
 CORS_ALLOW_CREDENTIALS = True
 CSRF_TRUSTED_ORIGINS = ['https://movies-backend-ophs.onrender.com']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-CSRF_COOKIE_SECURE = True
-SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = os.environ.get('COOKIE_SECURE', 'False') == 'True'
+SESSION_COOKIE_SECURE = os.environ.get('COOKIE_SECURE', 'False') == 'True'
+COOKIE_SECURE = os.environ.get('COOKIE_SECURE', 'False') == 'True'
 
 
 TMDB_API_KEY = os.environ.get('TMDB_API_KEY', '')

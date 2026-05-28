@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useLocation, Link } from "react-router-dom";
 import { SkeletonMovieCard } from './Skeleton';
+import API_BASE_URL from '../config';
 
 export default function SearchResults() {
   const location = useLocation();
@@ -15,7 +16,7 @@ export default function SearchResults() {
       setLoading(true);
       setError(null);
       try {
-        const url = `${'http://127.0.0.1:8000'}/movie/search?query=${query}&department=${activeDepartment}`;
+        const url = `${API_BASE_URL}/movie/search?query=${query}&department=${activeDepartment}`;
         const response = await fetch(url);
         if (!response.ok) throw new Error('Failed to fetch results');
         const data = await response.json();

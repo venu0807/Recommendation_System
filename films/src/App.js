@@ -1,7 +1,5 @@
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { UserProvider } from './components/Context';
-import ErrorBoundary from './components/ErrorBoundary';
 import Menu from './components/Menu';
 import Footer from './components/Footer';
 
@@ -43,9 +41,7 @@ import NotFound from './components/NotFound';
 
 function App() {
     return (
-        <ErrorBoundary>
-            <UserProvider>
-                <div className="app-container">
+        <div className="app-container">
                     <ProgressBar />
                     <Notifications />
                     <Menu />
@@ -105,8 +101,6 @@ function App() {
                     
                     <Footer />
                 </div>
-            </UserProvider>
-        </ErrorBoundary>
     );
 }
 

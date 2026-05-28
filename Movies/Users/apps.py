@@ -6,5 +6,4 @@ class UsersConfig(AppConfig):
     name = 'Users'
 
     def ready(self):
-        from .utils import fetch_movies 
-        fetch_movies()
+        pass

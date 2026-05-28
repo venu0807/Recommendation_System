@@ -183,3 +183,5 @@ python-dotenv==1.0.1
 daphne
 redis
 channels_redis
+drf-spectacular==0.28.0
+drf-spectacular-sidecar==2024.12.1

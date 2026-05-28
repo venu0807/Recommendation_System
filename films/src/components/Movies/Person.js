@@ -3,6 +3,7 @@ import { useParams, useLocation, Link } from "react-router-dom";
 import { UserContext } from "../Context";
 import AccountBoxSharpIcon from "@mui/icons-material/AccountBoxSharp";
 import { SkeletonPersonCard } from "../Skeleton";
+import API_BASE_URL from "../../config";
 
 export default function PersonComponent() {
   const { id } = useParams();
@@ -40,7 +41,7 @@ export default function PersonComponent() {
         }
 
         // If not in context, fetch from API
-        const response = await fetch(`${'http://127.0.0.1:8000'}/movie/${id}/`);
+        const response = await fetch(`${API_BASE_URL}/movie/${id}/`);
         const data = await response.json();
         // Defensive: ensure cast/crew are always arrays
         if (!Array.isArray(data.cast)) data.cast = [];

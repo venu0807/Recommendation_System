@@ -57,12 +57,14 @@ class MyTokenObtainPairView(TokenObtainPairView):
             access_token = response.data.get('access')
             refresh_token = response.data.get('refresh')
             
+            from django.conf import settings
+            is_secure = getattr(settings, 'COOKIE_SECURE', False)
             response.set_cookie(
                 'access_token',
                 access_token,
                 httponly=True,
                 samesite='Lax',
-                secure=False,  # Set to True in production with HTTPS
+                secure=is_secure,
                 max_age=300
             )
             response.set_cookie(
@@ -70,8 +72,8 @@ class MyTokenObtainPairView(TokenObtainPairView):
                 refresh_token,
                 httponly=True,
                 samesite='Lax',
-                secure=False,
-                max_age=3600 * 24 * 90
+                secure=is_secure,
+                max_age=3600 * 24 * 30  # 30 days
             )
             
             # Optionally remove tokens from the JSON body so frontend doesn't store them
@@ -176,7 +178,7 @@ class MovieViewSet(viewsets.ModelViewSet):
     permission_classes = [AllowAny]
     pagination_class = StandardResultsSetPagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ['title', 'genres__name', 'actor__member__name']
+    search_fields = ['title', 'genres__name', 'cast__name']
     ordering_fields = ['release_date', 'average_rating']
     ordering = ['-id']
 

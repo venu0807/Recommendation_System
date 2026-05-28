@@ -22,16 +22,27 @@ def get_search_results(query):
     
     results['movies'] = MovieSerializer(movies, many=True).data
 
+    # DB-level name matching (also_known_as is matched in Python for SQLite compatibility)
     person_query = Q()
     for part in query.split():
         part_cleaned = re.sub(r'[^a-zA-Z0-9\s]', '', part)
-        person_query |= Q(name__icontains=part) | Q(also_known_as__contains=part)
-        person_query |= Q(name__icontains=part_cleaned) | Q(also_known_as__contains=part_cleaned)
-
-    person_query |= Q(name__icontains=normalized_query) | Q(also_known_as__contains=normalized_query)
-    person_query |= Q(name__icontains=cleaned_query) | Q(also_known_as__contains=cleaned_query)
+        person_query |= Q(name__icontains=part) | Q(name__icontains=part_cleaned)
+    person_query |= Q(name__icontains=normalized_query) | Q(name__icontains=cleaned_query)
 
     persons = PersonModel.objects.filter(person_query).distinct()
+
+    # Also match against also_known_as in Python (SQLite doesn't support JSONField contains)
+    query_parts_lower = [p.lower() for p in query.split() if p]
+    if query_parts_lower:
+        aka_ids = []
+        for person in PersonModel.objects.all():
+            if person.also_known_as:
+                for aka in (person.also_known_as if isinstance(person.also_known_as, list) else []):
+                    if isinstance(aka, str) and any(qp in aka.lower() for qp in query_parts_lower):
+                        aka_ids.append(person.id)
+                        break
+        if aka_ids:
+            persons = persons | PersonModel.objects.filter(id__in=aka_ids)
     results['persons'] = PersonSerializer(persons, many=True).data
 
     genres = GenreModel.objects.filter(

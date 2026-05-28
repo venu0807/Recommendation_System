@@ -3,6 +3,7 @@ import React, { useContext, useEffect, useState } from "react";
 import { UserContext } from "../Context";
 import { Link, useNavigate } from "react-router-dom";
 import { SkeletonMovieCard } from "../Skeleton";
+import API_BASE_URL from "../../config";
 
 const Watchlist = () => {
   const { watchlist, loading, user, authTokens, setWatchlist } = useContext(UserContext);
@@ -13,7 +14,7 @@ const Watchlist = () => {
     if (!authTokens) return;
     setIsUpdating(true);
     try {
-      const response = await fetch(`${'http://127.0.0.1:8000'}/watchlist/my_watchlist/`, {
+      const response = await fetch(`${API_BASE_URL}/watchlist/my_watchlist/`, {
         headers: {
           'Authorization': `Bearer ${authTokens.access}`,
           'Content-Type': 'application/json',

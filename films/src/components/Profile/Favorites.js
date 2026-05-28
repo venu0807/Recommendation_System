@@ -2,7 +2,8 @@
 import React, { useContext, useEffect, useState } from "react";
 import { UserContext } from "../Context";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { SkeletonMovieCard } from '../Skeleton';  // Updated import path
+import { SkeletonMovieCard } from '../Skeleton';
+import API_BASE_URL from '../../config';
 
 const Favorites = () => {
   const { favorites, loading, user, authTokens, setFavorites } = useContext(UserContext);
@@ -13,7 +14,7 @@ const Favorites = () => {
     if (!authTokens) return;
     setIsUpdating(true);
     try {
-      const response = await fetch(`${'http://127.0.0.1:8000'}/favorites/my_favorites/`, {
+      const response = await fetch(`${API_BASE_URL}/favorites/my_favorites/`, {
         headers: {
           'Authorization': `Bearer ${authTokens.access}`,
           'Content-Type': 'application/json',

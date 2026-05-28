@@ -1,6 +1,7 @@
 import React, { useContext } from 'react';
 import { UserContext } from '../Context';
 import { Link } from 'react-router-dom';
+import API_BASE_URL from '../../config';
 
 const Profile = () => {
   const { user, preferences, favorites, watchlist } = useContext(UserContext);
@@ -12,7 +13,7 @@ const Profile = () => {
   // Use extended profile info if available
   const profile = user.profile || {};
   const avatarUrl = profile.avatar
-    ? (profile.avatar.startsWith('http') ? profile.avatar : `http://127.0.0.1:8000${profile.avatar}`)
+    ? (profile.avatar.startsWith('http') ? profile.avatar : `${API_BASE_URL}${profile.avatar}`)
     : null;
 
   return (

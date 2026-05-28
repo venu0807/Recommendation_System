@@ -3,6 +3,7 @@ import { UserContext } from "../Context";
 import { Link } from "react-router-dom";
 import { SkeletonMovieCard } from '../Skeleton';  // Updated import path
 import SortFilter from "../SortFilter";
+import API_BASE_URL from "../../config";
 
 export default function Toprated() {
   const { topratedMovies, loading } = useContext(UserContext);
@@ -20,12 +21,12 @@ export default function Toprated() {
 
   useEffect(() => {
     const fetchGenres = async () => {
-      const response = await fetch(`${'http://127.0.0.1:8000'}/genre/`);
+      const response = await fetch(`${API_BASE_URL}/genre/`);
       const data = await response.json();
       setGenres(data);
     };
     const fetchKeywords = async () => {
-      const response = await fetch(`${'http://127.0.0.1:8000'}/keyword/`);
+      const response = await fetch(`${API_BASE_URL}/keyword/`);
       const data = await response.json();
       setKeywords(data);
     };

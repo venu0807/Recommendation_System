@@ -1,6 +1,7 @@
 import aiohttp
 import asyncio
 from django.core.management.base import BaseCommand
+from django.conf import settings
 from django.db import IntegrityError  # Import IntegrityError
 from ...models import *
 import logging
@@ -12,7 +13,9 @@ logger = logging.getLogger(__name__)
 class Command(BaseCommand):
     help = 'Fetch all movies from TMDB API and save to the database'
 
-    api_key = '57b5f1654695efb88db0e9b69b632b82'  # Replace with your actual TMDB API key
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.api_key = settings.TMDB_API_KEY
     max_concurrent_requests = 5  # Limit concurrent requests per batch
     retries = 3  # Max retries for API requests
     max_movies = 5000  # Target number of movies to fetch
