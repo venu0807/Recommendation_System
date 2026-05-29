@@ -60,8 +60,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Add custom claims
         token['username'] = user.username
         token['email'] = user.email
-        token['firstname'] = user.first_name
-        token['lastname'] = user.last_name
+        token['first_name'] = user.first_name
+        token['last_name'] = user.last_name
         token['is_staff'] = user.is_staff
         return token
 
@@ -107,11 +107,11 @@ def register_user(request):
         data = json.loads(request.body.decode('utf-8'))
         username = data.get('username')
         password = data.get('password')
-        firstname = data.get('firstname')
-        lastname = data.get('lastname')
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
         email = data.get('email')
 
-        if not username or not password or not firstname or not lastname or not email:
+        if not username or not password or not first_name or not last_name or not email:
             return JsonResponse({'detail': 'Invalid data'}, status=400)
 
         try:
@@ -120,15 +120,10 @@ def register_user(request):
                 username=username,
                 password=password,
                 email=email,
-                first_name=firstname,  # Save first name
-                last_name=lastname      # Save last name
+                first_name=first_name,
+                last_name=last_name
             )
-            user_profile = UserProfileModel.objects.create(
-                user=user,
-                firstname=firstname,
-                lastname=lastname,
-                email=email
-            )
+            user_profile = UserProfileModel.objects.create(user=user)
 
             logger.info(f"User profile created: {user_profile}")
 
@@ -433,15 +428,14 @@ class PersonViewSet(viewsets.ModelViewSet):
             ).prefetch_related('genres', 'cast', 'crew')
 
             # Combine and sort all movies
-            all_movies = cast_movies.union(crew_movies).order_by('-release_date')
+            all_movies = list(cast_movies.union(crew_movies).order_by('-release_date'))
 
-            # Serialize the data
+            # Serialize once (avoids N+1 serialization)
             serializer = MovieSerializer(all_movies, many=True)
             
             # Add role information to each movie
             movies_with_roles = []
-            for movie in all_movies:
-                movie_data = MovieSerializer(movie).data
+            for movie_data, movie in zip(serializer.data, all_movies):
                 movie_data['role_type'] = movie.role_type
                 movie_data['role'] = movie.role
                 movies_with_roles.append(movie_data)
@@ -818,21 +812,36 @@ class TVShowViewSet(viewsets.ModelViewSet):
     @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def popular(self, request):
-        popular_shows = self.get_queryset().filter(poster_path__isnull=False).order_by('-popularity')[:20]
+        queryset = self.get_queryset().filter(poster_path__isnull=False).order_by('-popularity')
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        popular_shows = queryset[:20]
         serializer = self.get_serializer(popular_shows, many=True)
         return Response(serializer.data)
 
     @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def top_rated(self, request):
-        top_rated_shows = self.get_queryset().filter(poster_path__isnull=False).order_by('-vote_average', '-vote_count')[:20]
+        queryset = self.get_queryset().filter(poster_path__isnull=False).order_by('-vote_average', '-vote_count')
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        top_rated_shows = queryset[:20]
         serializer = self.get_serializer(top_rated_shows, many=True)
         return Response(serializer.data)
 
     @method_decorator(cache_page(60 * 15))
     @action(detail=False, methods=['get'])
     def on_air(self, request):
-        on_air_shows = self.get_queryset().filter(poster_path__isnull=False).order_by('-first_air_date')[:20]
+        queryset = self.get_queryset().filter(poster_path__isnull=False).order_by('-first_air_date')
+        page = self.paginate_queryset(queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        on_air_shows = queryset[:20]
         serializer = self.get_serializer(on_air_shows, many=True)
         return Response(serializer.data)
 

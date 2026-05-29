@@ -17,13 +17,13 @@ describe('Profile', () => {
   const defaultUser = {
     username: 'testuser',
     email: 'test@example.com',
-    firstname: 'Test',
-    lastname: 'User',
+    first_name: 'Test',
+    last_name: 'User',
     profile: {
       avatar: '/media/avatars/test.jpg',
       bio: 'A test user bio',
-      firstname: 'Test',
-      lastname: 'User',
+      first_name: 'Test',
+      last_name: 'User',
     },
   };
 

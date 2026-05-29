@@ -20,18 +20,30 @@ export default function Nowplaying() {
   }, [nowplayingMovies]);
 
   useEffect(() => {
+    const abortController = new AbortController();
+
     const fetchGenres = async () => {
-      const response = await fetch(`${API_BASE_URL}/genre/`);
-      const data = await response.json();
-      setGenres(data);
+      try {
+        const response = await fetch(`${API_BASE_URL}/genre/`, { signal: abortController.signal });
+        const data = await response.json();
+        if (!abortController.signal.aborted) setGenres(data);
+      } catch (error) {
+        if (!abortController.signal.aborted) console.error('Error fetching genres:', error);
+      }
     };
     const fetchKeywords = async () => {
-      const response = await fetch(`${API_BASE_URL}/keyword/`);
-      const data = await response.json();
-      setKeywords(data);
+      try {
+        const response = await fetch(`${API_BASE_URL}/keyword/`, { signal: abortController.signal });
+        const data = await response.json();
+        if (!abortController.signal.aborted) setKeywords(data);
+      } catch (error) {
+        if (!abortController.signal.aborted) console.error('Error fetching keywords:', error);
+      }
     };
     fetchGenres();
     fetchKeywords();
+
+    return () => abortController.abort();
   }, []);
 
   const handleSort = (sortType) => {

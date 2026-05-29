@@ -1,756 +1,87 @@
-/* eslint-disable */
-import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
-import { jwtDecode } from "jwt-decode";
+import React, { createContext, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import API_BASE_URL from "../config";
+import { useAuth } from "../hooks/useAuth";
+import { useMovies } from "../hooks/useMovies";
+import { useProfile } from "../hooks/useProfile";
 export const UserContext = createContext();
 
 export const UserProvider = ({ children }) => {
-  const wsRef = useRef(null);
-  const [authTokens, setAuthTokens] = useState(null);
-  const [user, setUser] = useState(null);
-
-  const [movies, setMovies] = useState([]);
-  const [upcomingMovies, setUpcomingMovies] = useState([]);
-  const [nowplayingMovies, setNowplayingMovies] = useState([]);
-  const [trendingMovies, setTrendingMovies] = useState([]);
-  const [topratedMovies, setTopratedMovies] = useState([]);
-  const [cast] = useState([]);
-  const [preferredMovies, setPreferredMovies] = useState([]);
-  const [ratedMovies, setRatedMovies] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [favorites, setFavorites] = useState([]);
-  const [watchlist, setWatchlist] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [watchHistory, setWatchHistory] = useState([]);
-  const [searchHistory, setSearchHistory] = useState([]);
-  const [recommendationLoading, setRecommendationLoading] = useState(true);
-  const [tvShowsPopular, setTvShowsPopular] = useState([]);
-  const [tvShowsTopRated, setTvShowsTopRated] = useState([]);
-  const [tvShowsOnAir, setTvShowsOnAir] = useState([]);
-  
   const navigate = useNavigate();
-  
-  const [preferences, setPreferences] = useState({
-    autoplayTrailers: true,
-    showAdultContent: false,
-    language: "en",
-    videoQuality: "hd",
-    preferredGenres: [],
-    preferredActors: [],
-    notInterestedMovies: [],
-  });
 
+  const auth = useAuth(navigate);
+  const movies = useMovies(auth.authTokens);
+  const profile = useProfile(auth.authTokens, navigate);
 
+  const { loading } = movies;
 
-  // Fetch user profile data
-  const fetchUserProfile = async () => {
-    if (!authTokens?.access) return;
-    
-    try {
-      const response = await fetch(`${API_BASE_URL}/api/user/me/`, {
-        headers: {
-          Authorization: `Bearer ${authTokens.access}`,
-        },
-      });
-      
-      if (response.ok) {
-        const profileData = await response.json();
-        setUser((prev) => ({ ...prev, profile: profileData }));
-      } else {
-        console.error('Failed to fetch user profile');
-      }
-    } catch (err) {
-      console.error('Error fetching user profile:', err);
-    }
-  };
+  /* ---------- Token refresh + initial load ---------- */
 
-  // Update user profile (avatar, bio, etc.)
-  const updateProfile = async (profileData) => {
-    const formData = new FormData();
-    Object.entries(profileData).forEach(([key, value]) => {
-      if (value !== undefined && value !== null) {
-        formData.append(key, value);
-      }
-    });
-    try {
-      // First get the current user profile to get the ID
-      const profileResponse = await fetch(`${API_BASE_URL}/api/user/me/`, {
-        headers: {
-          Authorization: `Bearer ${authTokens?.access}`,
-        },
-      });
-      
-      if (!profileResponse.ok) {
-        throw new Error('Failed to get current profile');
-      }
-      
-      const currentProfile = await profileResponse.json();
-      
-      // Update using the ViewSet endpoint
-      const response = await fetch(`${API_BASE_URL}/user/${currentProfile.id}/`, {
-        method: 'PUT',
-        headers: {
-          Authorization: `Bearer ${authTokens?.access}`,
-        },
-        body: formData,
-      });
-      
-      if (response.ok) {
-        const updated = await response.json();
-        setUser((prev) => ({ ...prev, profile: updated }));
-        addNotification('Profile updated successfully', 'success');
-      } else {
-        addNotification('Failed to update profile', 'danger');
-      }
-    } catch (err) {
-      addNotification('Error updating profile', 'danger');
-      console.error('Error updating profile:', err);
-    }
-  };
+  const isLocalhost =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
 
-
-
-  const registerUser = async (e, registerData) => {
-    e.preventDefault();
-    const { username, email, firstname, lastname, password, confirmPassword } =
-      registerData;
-
-    if (
-      !username ||
-      !firstname ||
-      !lastname ||
-      !password ||
-      password !== confirmPassword
-    ) {
-      console.error("Invalid Data");
-      return;
-    }
-
-    try {
-      const registerResponse = await fetch(`${API_BASE_URL}/register/`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          username: username,
-          password: password,
-          firstname: firstname,
-          lastname: lastname,
-          email: email,
-        }),
-      });
-
-      if (registerResponse.ok) {
-        const data = await registerResponse.json();
-        navigate("/login");
-        console.log("Registration successful", data);
-      } else {
-        console.error("Registration failed");
-      }
-    } catch (error) {
-      console.error("Error during registration", error);
-    }
-  };
-
-  const loginUser = async (e) => {
-    e.preventDefault();
-    const response = await fetch(`${API_BASE_URL}/token/`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({
-        username: e.target.username.value,
-        password: e.target.password.value,
-      }),
-    });
-
-    const data = await response.json();
-
-    if (response.status === 200) {
-      setAuthTokens(data);
-      setUser(jwtDecode(data.access));
-      await fetchUserProfile();
-      navigate("/");
-    } else {
-      alert("Something went wrong!");
-    }
-  };
-
-  const logoutUser = () => {
-    setAuthTokens(null);
-    setUser(null);
-    navigate("/");
-  };
-
-  const updateToken = async () => {
-    console.log("Update Token Called!");
-    try {
-      if (!authTokens?.refresh) {
-        setLoading(false);
-        return;
-      }
-
-      const response = await fetch(`${API_BASE_URL}/token/refresh/`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ refresh: authTokens.refresh }),
-      });
-
-      if (!response.ok) {
-        console.error("Token refresh failed:", response.status);
-        logoutUser();
-        return;
-      }
-
-      const data = await response.json();
-      setAuthTokens(data);
-      setUser(jwtDecode(data.access));
-
-      if (loading) {
-        setLoading(false);
-      }
-    } catch (error) {
-      console.error("Token refresh error:", error);
-      logoutUser();
-    }
-  };
-
-  // Static fallback movie list for live demo
-  const staticMovies = React.useMemo(() => [
-    {
-      id: 1,
-      title: "Inception",
-      poster_path: "/9gk7adHYeDvHkCSEqAvQNLV5Uge.jpg",
-      release_date: "2010-07-16",
-      popularity: 80,
-    },
-    {
-      id: 2,
-      title: "The Dark Knight",
-      poster_path: "/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
-      release_date: "2008-07-18",
-      popularity: 90,
-    },
-    {
-      id: 3,
-      title: "Interstellar",
-      poster_path: "/gEU2QniE6E77NI6lCU6MxlNBvIx.jpg",
-      release_date: "2014-11-07",
-      popularity: 85,
-    },
-    {
-      id: 4,
-      title: "The Matrix",
-      poster_path: "/f89U3ADr1oiB1s9GkdPOEpXUk5H.jpg",
-      release_date: "1999-03-31",
-      popularity: 75,
-    },
-    {
-      id: 5,
-      title: "Pulp Fiction",
-      poster_path: "/d5iIlFn5s0ImszYzBPb8JPIfbXD.jpg",
-      release_date: "1994-10-14",
-      popularity: 70,
-    },
-    {
-      id: 6,
-      title: "Fight Club",
-      poster_path: "/a26cQPRhJPX6GbWfQbvZdrrp9j9.jpg",
-      release_date: "1999-10-15",
-      popularity: 65,
-    },
-    {
-      id: 7,
-      title: "Forrest Gump",
-      poster_path: "/clolk7rB5lAjs41SD0Vt6IXYLMm.jpg",
-      release_date: "1994-07-06",
-      popularity: 60,
-    },
-    {
-      id: 8,
-      title: "The Shawshank Redemption",
-      poster_path: "/q6y0Go1tsGEsmtFryDOJo3dEmqu.jpg",
-      release_date: "1994-09-23",
-      popularity: 95,
-    },
-    {
-      id: 9,
-      title: "The Godfather",
-      poster_path: "/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
-      release_date: "1972-03-24",
-      popularity: 88,
-    },
-    {
-      id: 10,
-      title: "The Lord of the Rings: The Fellowship of the Ring",
-      poster_path: "/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
-      release_date: "2001-12-19",
-      popularity: 78,
-    },
-    {
-      id: 11,
-      title: "Avengers: Endgame",
-      poster_path: "/or06FN3Dka5tukK1e9sl16pB3iy.jpg",
-      release_date: "2019-04-26",
-      popularity: 99,
-    },
-  ], []);
-
-  const isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
-
-  const fetchData = async () => {
-    
-    try {
-      console.log('Attempting to fetch data from backend...');
-      const [
-        moviesResponse,
-        upcomingResponse,
-        nowPlayingResponse,
-        trendingResponse,
-        topRatedResponse,
-      ] = await Promise.allSettled([
-        fetch(`${API_BASE_URL}/movie/popular/`),
-        fetch(`${API_BASE_URL}/movie/upcoming/`),
-        fetch(`${API_BASE_URL}/movie/now_playing/`),
-        fetch(`${API_BASE_URL}/movie/trending_today/`),
-        fetch(`${API_BASE_URL}/movie/top_rated/`),
-      ]);
-
-      let hasData = false;
-
-      if (moviesResponse.status === "fulfilled" && moviesResponse.value.ok) {
-        const data = await moviesResponse.value.json();
-        setMovies(data);
-        hasData = true;
-      } else {
-        setMovies([]);
-      }
-      if (upcomingResponse.status === "fulfilled" && upcomingResponse.value.ok) {
-        const data = await upcomingResponse.value.json();
-        setUpcomingMovies(data);
-        hasData = true;
-      } else {
-        setUpcomingMovies([]);
-      }
-      if (nowPlayingResponse.status === "fulfilled" && nowPlayingResponse.value.ok) {
-        const data = await nowPlayingResponse.value.json();
-        setNowplayingMovies(data);
-        hasData = true;
-      } else {
-        setNowplayingMovies([]);
-      }
-      if (trendingResponse.status === "fulfilled" && trendingResponse.value.ok) {
-        const data = await trendingResponse.value.json();
-        setTrendingMovies(data);
-        hasData = true;
-      } else {
-        setTrendingMovies([]);
-      }
-      if (topRatedResponse.status === "fulfilled" && topRatedResponse.value.ok) {
-        const data = await topRatedResponse.value.json();
-        setTopratedMovies(data);
-        hasData = true;
-      } else {
-        setTopratedMovies([]);
-      }
-
-      if (!hasData) {
-        console.log('Backend not available, using static data');
-        setMovies([]);
-        setUpcomingMovies([]);
-        setNowplayingMovies([]);
-        setTrendingMovies([]);
-        setTopratedMovies([]);
-      }
-    } catch (error) {
-      console.error("Error fetching data from backend, using static data:", error);
-      setMovies([]);
-      setUpcomingMovies([]);
-      setNowplayingMovies([]);
-      setTrendingMovies([]);
-      setTopratedMovies([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPersonalizedMovies = async () => {
-    if (!authTokens) return;
-
-    try {
-      console.log("Fetching personalized movies...");
-      const response = await fetch(
-        `${API_BASE_URL}/movie/user_recommendations/`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${authTokens.access}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      const data = await response.json();
-      console.log("Response status:", response.status);
-      console.log("Response data:", data);
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Failed to fetch personalized movies");
-      }
-
-      if (data.recommendations && data.recommendations.length > 0) {
-        console.log(
-          "Setting preferred movies:",
-          data.recommendations.map((m) => m.title)
-        );
-        setPreferredMovies(data.recommendations);
-      } else {
-        console.log("No recommendations available, falling back to trending");
-        setPreferredMovies([]);
-      }
-
-      if (data.rated_movies && data.rated_movies.length > 0) {
-        console.log(
-          "Setting rated movies:",
-          data.rated_movies.map((m) => m.movie.title)
-        );
-        setRatedMovies(data.rated_movies);
-      }
-    } catch (error) {
-      console.error("Error fetching personalized movies:", error);
-      setPreferredMovies([]);
-      setRatedMovies([]);
-    }
-  };
-
-  const rateMovie = async (movieId, rating, feedback) => {
-    if (!authTokens) return;
-
-    try {
-      console.log("Rating movie:", { movieId, rating, feedback });
-      const response = await fetch(`${API_BASE_URL}/movie/rate/`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${authTokens.access}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          movie_id: movieId,
-          rating: Number(rating).toFixed(1),
-          feedback: feedback || "",
-        }),
-      });
-
-      const data = await response.json();
-      console.log("Rate response:", data);
-
-      if (!response.ok) {
-        throw new Error(data.detail || "Failed to rate movie");
-      }
-
-      await fetchPersonalizedMovies();
-    } catch (error) {
-      console.error("Error rating movie:", error);
-    }
-  };
-
-  const fetchFavorites = async () => {
-    if (!authTokens) return;
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/favorites/my_favorites/`, {
-            headers: {
-                'Authorization': `Bearer ${authTokens.access}`,
-                'Content-Type': 'application/json',
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            setFavorites(data);
-        }
-    } catch (error) {
-        console.error("Error fetching favorites:", error);
-    }
-  };
-
-  const addToFavorites = async (movieId) => {
-    if (!authTokens) {
-        addNotification('Please login to add favorites', 'warning');
-        navigate('/login');
-        return false;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/favorites/add/`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${authTokens.access}`,
-            },
-            body: JSON.stringify({ movie_id: movieId }),
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            setFavorites(prev => [...prev, data]);
-            addNotification('Added to favorites!', 'success');
-            await fetchFavorites();
-            return true;
-        }
-        throw new Error('Failed to add to favorites');
-    } catch (error) {
-        console.error("Error adding to favorites:", error);
-        addNotification('Failed to add to favorites', 'error');
-        return false;
-    }
-  };
-
-  const removeFromFavorites = async (movieId) => {
-    if (!authTokens) return false;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/favorites/${movieId}/remove/`, {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${authTokens.access}`,
-            },
-        });
-
-        if (response.ok) {
-            const updatedFavorites = favorites.filter(fav => fav.movie.id !== movieId);
-            setFavorites(updatedFavorites);
-            addNotification('Removed from favorites', 'info');
-            await fetchFavorites();
-            return true;
-        }
-        throw new Error('Failed to remove from favorites');
-    } catch (error) {
-        console.error("Error removing from favorites:", error);
-        addNotification('Failed to remove from favorites', 'error');
-        return false;
-    }
-  };
-
-  const fetchWatchlist = async () => {
-    if (!authTokens) return;
-    
-    try {
-        const response = await fetch(`${API_BASE_URL}/watchlist/my_watchlist/`, {
-            headers: {
-                'Authorization': `Bearer ${authTokens.access}`,
-                'Content-Type': 'application/json',
-            }
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            setWatchlist(data);
-        }
-    } catch (error) {
-        console.error("Error fetching watchlist:", error);
-    }
-  };
-
-  const addToWatchlist = async (movieId) => {
-    if (!authTokens) {
-        addNotification('Please login to add to watchlist', 'warning');
-        navigate('/login');
-        return false;
-    }
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/watchlist/add/`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                Authorization: `Bearer ${authTokens.access}`,
-            },
-            body: JSON.stringify({ movie_id: movieId }),
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            setWatchlist(prev => [...prev, data]);
-            addNotification('Added to watchlist!', 'success');
-            await fetchWatchlist();
-            return true;
-        }
-        throw new Error('Failed to add to watchlist');
-    } catch (error) {
-        console.error("Error adding to watchlist:", error);
-        addNotification('Failed to add to watchlist', 'error');
-        return false;
-    }
-  };
-
-  const removeFromWatchlist = async (movieId) => {
-    if (!authTokens) return false;
-
-    try {
-        const response = await fetch(`${API_BASE_URL}/watchlist/${movieId}/remove/`, {
-            method: "DELETE",
-            headers: {
-                Authorization: `Bearer ${authTokens.access}`,
-            },
-        });
-
-        if (response.ok) {
-            const updatedWatchlist = watchlist.filter(item => item.movie.id !== movieId);
-            setWatchlist(updatedWatchlist);
-            addNotification('Removed from watchlist', 'info');
-            await fetchWatchlist();
-            return true;
-        }
-        throw new Error('Failed to remove from watchlist');
-    } catch (error) {
-        console.error("Error removing from watchlist:", error);
-        addNotification('Failed to remove from watchlist', 'error');
-        return false;
-    }
-  };
-
-  const addNotification = (message, type = "info") => {
-    const notification = {
-      id: Date.now(),
-      message,
-      type,
-      timestamp: new Date(),
-    };
-    setNotifications((prev) => [notification, ...prev]);
-    setTimeout(() => {
-      setNotifications((prev) => prev.filter((n) => n.id !== notification.id));
-    }, 5000);
-  };
-
-  const addToWatchHistory = (movie) => {
-    setWatchHistory((prev) => {
-      const exists = prev.some((m) => m.id === movie.id);
-      return exists ? prev : [movie, ...prev].slice(0, 50);
-    });
-  };
-
-  const addToSearchHistory = (query) => {
-    setSearchHistory((prev) => {
-      const exists = prev.some((q) => q === query);
-      return exists ? prev : [query, ...prev].slice(0, 20);
-    });
-  };
-
-  const updatePreferences = (newPreferences) => {
-    setPreferences((prev) => ({ ...prev, ...newPreferences }));
-    localStorage.setItem("userPreferences", JSON.stringify(newPreferences));
-  };
-
-  const addNotInterestedMovie = (movieId) => {
-    setPreferences((prev) => ({
-      ...prev,
-      notInterestedMovies: [...prev.notInterestedMovies, movieId],
-    }));
-  };
-
-  const fetchTvShows = async () => {
-    try {
-      const [popularRes, topRatedRes, onAirRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/tv/popular/`),
-        fetch(`${API_BASE_URL}/tv/top_rated/`),
-        fetch(`${API_BASE_URL}/tv/on_air/`),
-      ]);
-      if (popularRes.ok) setTvShowsPopular(await popularRes.json());
-      if (topRatedRes.ok) setTvShowsTopRated(await topRatedRes.json());
-      if (onAirRes.ok) setTvShowsOnAir(await onAirRes.json());
-    } catch (error) {
-      console.error('Error fetching TV shows:', error);
-    }
-  };
-
-  // WebSocket connection for real-time recommendations
+  // Fetch initial data on mount
+  const fetchDataCallback = useCallback(movies.fetchData, [isLocalhost]);
   useEffect(() => {
-    if (!user) return;
-    const wsBase = API_BASE_URL.replace(/^http/, 'ws');
-    const wsUrl = `${wsBase}/ws/recommendations/`;
-    wsRef.current = new window.WebSocket(wsUrl);
+    fetchDataCallback();
 
-    wsRef.current.onopen = () => {
-      console.log('WebSocket connected for recommendations');
-    };
-    wsRef.current.onclose = () => {
-      console.log('WebSocket disconnected');
-    };
-    wsRef.current.onerror = (e) => {
-      console.error('WebSocket error:', e);
-    };
-    wsRef.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        if (data.recommendations) {
-          setPreferredMovies(data.recommendations);
-          setRecommendationLoading(false);
-          addNotification('Recommendations updated in real time!', 'info');
-        }
-      } catch (err) {
-        console.error('Error parsing WebSocket message:', err);
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn("Setting loading to false due to timeout fallback");
+        movies.setLoading(false);
       }
-    };
-    return () => {
-      if (wsRef.current) wsRef.current.close();
-    };
-  }, [user]);
+    }, 30000);
+
+    return () => clearTimeout(timeoutId);
+  }, [fetchDataCallback, loading, movies.setLoading]);
 
   // Fetch favorites when user logs in
-  const fetchFavoritesCallback = useCallback(fetchFavorites, [authTokens]);
+  const fetchFavoritesCallback = useCallback(profile.fetchFavorites, [auth.authTokens]);
   useEffect(() => {
-      if (authTokens) {
-          fetchFavoritesCallback();
-      }
-  }, [authTokens, fetchFavoritesCallback]);
+    if (auth.authTokens) {
+      fetchFavoritesCallback();
+    }
+  }, [auth.authTokens, fetchFavoritesCallback]);
 
   // Fetch watchlist when user logs in
-  const fetchWatchlistCallback = useCallback(fetchWatchlist, [authTokens]);
+  const fetchWatchlistCallback = useCallback(profile.fetchWatchlist, [auth.authTokens]);
   useEffect(() => {
-      if (authTokens) {
-          fetchWatchlistCallback();
-      }
-  }, [authTokens, fetchWatchlistCallback]);
+    if (auth.authTokens) {
+      fetchWatchlistCallback();
+    }
+  }, [auth.authTokens, fetchWatchlistCallback]);
 
   // Fetch personalized movies when user logs in
-  const fetchPersonalizedMoviesCallback = useCallback(fetchPersonalizedMovies, [authTokens]);
+  const fetchPersonalizedMoviesCallback = useCallback(
+    movies.fetchPersonalizedMovies,
+    [auth.authTokens]
+  );
   useEffect(() => {
-    if (authTokens) {
+    if (auth.authTokens) {
       fetchPersonalizedMoviesCallback();
     }
-  }, [authTokens, fetchPersonalizedMoviesCallback]);
+  }, [auth.authTokens, fetchPersonalizedMoviesCallback]);
 
   // Fetch user profile on app load if tokens exist
   useEffect(() => {
-    if (authTokens) {
-      fetchUserProfile();
+    if (auth.authTokens) {
+      auth.fetchUserProfile();
     }
-  }, [authTokens]);
-
-  // Fetch initial data
-  const fetchDataCallback = useCallback(fetchData, [isLocalhost, staticMovies]);
-  useEffect(() => {
-    fetchDataCallback();
-    
-    // Fallback: ensure loading is set to false even if fetchData fails
-    const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.log('Setting loading to false due to timeout fallback');
-        setLoading(false);
-      }
-    }, 30000); // 30 second timeout
-
-    return () => clearTimeout(timeoutId);
-  }, [fetchDataCallback, loading]);
+  }, [auth.authTokens]);
 
   // Fetch TV shows
   useEffect(() => {
-    fetchTvShows();
-  }, []);
+    movies.fetchTvShows();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // WebSocket for real-time recommendations
+  useEffect(() => {
+    return profile.connectWebSocket(auth.user, (recommendations) => {
+      movies.setPreferredMovies(recommendations);
+      profile.setRecommendationLoading(false);
+      profile.addNotification("Recommendations updated in real time!", "info");
+    });
+  }, [auth.user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Token refresh logic
   useEffect(() => {
@@ -758,15 +89,15 @@ export const UserProvider = ({ children }) => {
     let intervalId;
 
     const refreshToken = async () => {
-      if (!isMounted || !authTokens?.refresh) return;
+      if (!isMounted || !auth.authTokens?.refresh) return;
       try {
-        await updateToken();
+        await auth.updateToken();
       } catch (error) {
         console.error("Token refresh failed:", error);
       }
     };
 
-    if (loading && authTokens?.refresh) {
+    if (loading && auth.authTokens?.refresh) {
       refreshToken();
     }
 
@@ -778,83 +109,103 @@ export const UserProvider = ({ children }) => {
         clearInterval(intervalId);
       }
     };
-  }, [authTokens, loading]);
+  }, [auth.authTokens, loading]);
 
-  // Debug logging
-  useEffect(() => {
-    if (user) {
-      console.log("Auth state changed:", {
-        user: user,
-        preferredMovies: preferredMovies.length,
-        ratedMovies: ratedMovies.length,
-      });
-    }
-  }, [user, preferredMovies, ratedMovies]);
+  /* ---------- Context value ---------- */
 
-  const contextValue = React.useMemo(() => ({
-    authTokens,
-    user,
-    registerUser,
-    loginUser,
-    logoutUser,
-    updateToken,
-    rateMovie,
-    movies,
-    upcomingMovies,
-    nowplayingMovies,
-    trendingMovies,
-    topratedMovies,
-    preferredMovies,
-    ratedMovies,
-    cast,
-    loading,
-    favorites,
-    watchlist,
-    addToFavorites,
-    removeFromFavorites,
-    addToWatchlist,
-    removeFromWatchlist,
-    notifications,
-    addNotification,
-    watchHistory,
-    addToWatchHistory,
-    searchHistory,
-    addToSearchHistory,
-    preferences,
-    updatePreferences,
-    addNotInterestedMovie,
-    setFavorites,
-    setWatchlist,
-    recommendationLoading,
-    setRecommendationLoading,
-    fetchPersonalizedMovies,
-    updateProfile,
-    fetchUserProfile,
-    tvShowsPopular,
-    tvShowsTopRated,
-    tvShowsOnAir,
-    fetchTvShows,
-  }), [
-    authTokens, user, movies, upcomingMovies, nowplayingMovies, trendingMovies, 
-    topratedMovies, preferredMovies, ratedMovies, cast, loading, favorites, 
-    watchlist, notifications, watchHistory, searchHistory, preferences, 
-    recommendationLoading, tvShowsPopular, tvShowsTopRated, tvShowsOnAir
-  ]);
+  const contextValue = React.useMemo(
+    () => ({
+      authTokens: auth.authTokens,
+      user: auth.user,
+      registerUser: auth.registerUser,
+      loginUser: auth.loginUser,
+      logoutUser: auth.logoutUser,
+      updateToken: auth.updateToken,
+      fetchUserProfile: auth.fetchUserProfile,
+      updateProfile: async (profileData) => {
+        const result = await auth.updateProfile(profileData);
+        if (result?.success) {
+          profile.addNotification(result.message, 'success');
+        } else if (result) {
+          profile.addNotification(result.message, 'danger');
+        }
+        return result;
+      },
 
-  console.log('Context render - loading:', loading, 'user:', !!user, 'movies count:', trendingMovies.length);
-  
+      movies: movies.movies,
+      upcomingMovies: movies.upcomingMovies,
+      nowplayingMovies: movies.nowplayingMovies,
+      trendingMovies: movies.trendingMovies,
+      topratedMovies: movies.topratedMovies,
+      preferredMovies: movies.preferredMovies,
+      ratedMovies: movies.ratedMovies,
+      cast: movies.cast,
+      loading,
+      recommendationLoading: profile.recommendationLoading,
+      setRecommendationLoading: profile.setRecommendationLoading,
+      fetchPersonalizedMovies: movies.fetchPersonalizedMovies,
+      rateMovie: movies.rateMovie,
+      tvShowsPopular: movies.tvShowsPopular,
+      tvShowsTopRated: movies.tvShowsTopRated,
+      tvShowsOnAir: movies.tvShowsOnAir,
+      fetchTvShows: movies.fetchTvShows,
+
+      favorites: profile.favorites,
+      setFavorites: profile.setFavorites,
+      watchlist: profile.watchlist,
+      setWatchlist: profile.setWatchlist,
+      addToFavorites: profile.addToFavorites,
+      removeFromFavorites: profile.removeFromFavorites,
+      addToWatchlist: profile.addToWatchlist,
+      removeFromWatchlist: profile.removeFromWatchlist,
+      notifications: profile.notifications,
+      addNotification: profile.addNotification,
+      watchHistory: profile.watchHistory,
+      addToWatchHistory: profile.addToWatchHistory,
+      searchHistory: profile.searchHistory,
+      addToSearchHistory: profile.addToSearchHistory,
+      preferences: profile.preferences,
+      updatePreferences: profile.updatePreferences,
+      addNotInterestedMovie: profile.addNotInterestedMovie,
+    }),
+    [
+      auth.authTokens,
+      auth.user,
+      auth.updateProfile,
+      movies.movies,
+      movies.upcomingMovies,
+      movies.nowplayingMovies,
+      movies.trendingMovies,
+      movies.topratedMovies,
+      movies.preferredMovies,
+      movies.ratedMovies,
+      movies.cast,
+      movies.tvShowsPopular,
+      movies.tvShowsTopRated,
+      movies.tvShowsOnAir,
+      loading,
+      profile.recommendationLoading,
+      profile.favorites,
+      profile.watchlist,
+      profile.notifications,
+      profile.watchHistory,
+      profile.searchHistory,
+      profile.preferences,
+    ]
+  );
+
   return (
-      <UserContext.Provider value={contextValue}>
-        {loading ? (
-          <div className="text-center p-5">
-            <div className="spinner-border text-primary" role="status">
-              <span className="visually-hidden">Loading...</span>
-            </div>
-            <p className="mt-2">Loading movies...</p>
+    <UserContext.Provider value={contextValue}>
+      {loading ? (
+        <div className="text-center p-5">
+          <div className="spinner-border text-primary" role="status">
+            <span className="visually-hidden">Loading...</span>
           </div>
-        ) : (
-          children
-        )}
-      </UserContext.Provider>
+          <p className="mt-2">Loading movies...</p>
+        </div>
+      ) : (
+        children
+      )}
+    </UserContext.Provider>
   );
 };

@@ -30,7 +30,7 @@ const Profile = () => {
         <div className="col-md-10">
           <p><strong>Username:</strong> <span className="profile-value">{user.username}</span></p>
           <p><strong>Email:</strong> <span className="profile-value">{user.email}</span></p>
-          <p><strong>Full Name:</strong> <span className="profile-value">{profile.firstname || user.firstname} {profile.lastname || user.lastname}</span></p>
+          <p><strong>Full Name:</strong> <span className="profile-value">{profile.first_name || user.first_name} {profile.last_name || user.last_name}</span></p>
           {profile.bio && <p><strong>Bio:</strong> <span className="profile-value">{profile.bio}</span></p>}
           <Link to="/profile/edit" className="btn btn-outline-primary btn-sm mt-2">Edit Profile</Link>
         </div>

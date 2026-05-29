@@ -1,28 +1,100 @@
+# ============================
 # Python
+# ============================
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
-*.db
-*.sqlite3
+*.egg-info/
+.pytest_cache/
 
+# ============================
 # Virtual environments
+# ============================
 venv/
 .venv/
 Lib/
 Scripts/
 site-packages/
+pyvenv.cfg
+pip-log.txt
+pip-delete-this-directory.txt
 
-# Node and frontend
+# ============================
+# Local databases
+# ============================
+*.db
+*.sqlite3
+*.sqlite
+
+# ============================
+# Django
+# ============================
+staticfiles/
+*.mo
+*.pot
+
+# ============================
+# Environment files
+# ============================
+.env
+.env.*
+!.env.example
+
+# ============================
+# Node / Frontend
+# ============================
 node_modules/
 build/
 dist/
 
+# ============================
+# IDE / Editors
+# ============================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+*.sublime-project
+*.sublime-workspace
+
+# ============================
 # OS files
+# ============================
 .DS_Store
 Thumbs.db
+ehthumbs.db
+Desktop.ini
 
-# Other
+# ============================
+# ============================
+# Logs & temp files
+# ============================
 *.log
-*.env
-.env.*
+*.tmp
+*.temp
+
+# ============================
+# Testing / Coverage
+# ============================
+coverage/
+.coverage
+htmlcov/
+
+# ============================
+# Project-specific junk
+# ============================
+# One-time utility scripts
+fix_urls.py
+fix_frontend.py
+export_sample_data.py
+migrate_movies.py
+
+# Test / scratch data
+tmdb_test.json
+local_db.json
+Movie_Recommandation.txt
+
+# Django test database (generated in-memory but may leave artifacts)
+test_db*

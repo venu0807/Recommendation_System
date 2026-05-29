@@ -9,8 +9,8 @@ const Register = () => {
   const [formData, setFormData] = useState({
     username: "",
     email: "",
-    firstname: "",
-    lastname: "",
+    first_name: "",
+    last_name: "",
     password: "",
     confirmPassword: "",
   });
@@ -85,8 +85,8 @@ const Register = () => {
                 <input
                   type="text"
                   className="form-control"
-                  name="firstname"
-                  value={formData.firstname}
+                  name="first_name"
+                  value={formData.first_name}
                   onChange={handleChange}
                   placeholder="First Name"
                   required
@@ -97,8 +97,8 @@ const Register = () => {
                 <input
                   type="text"
                   className="form-control"
-                  name="lastname"
-                  value={formData.lastname}
+                  name="last_name"
+                  value={formData.last_name}
                   onChange={handleChange}
                   placeholder="Last Name"
                   required

@@ -34,8 +34,9 @@ def get_search_results(query):
     # Also match against also_known_as in Python (SQLite doesn't support JSONField contains)
     query_parts_lower = [p.lower() for p in query.split() if p]
     if query_parts_lower:
+        # Only check persons that already matched the name query to reduce iterations
         aka_ids = []
-        for person in PersonModel.objects.all():
+        for person in persons.only('id', 'also_known_as'):
             if person.also_known_as:
                 for aka in (person.also_known_as if isinstance(person.also_known_as, list) else []):
                     if isinstance(aka, str) and any(qp in aka.lower() for qp in query_parts_lower):

@@ -250,31 +250,22 @@ class UserProfileModelTest(ModelTestBase):
     def test_profile_creation(self):
         profile = UserProfileModel.objects.create(
             user=self.user,
-            firstname='Test',
-            lastname='User',
-            email='test@example.com',
             subscription_type='free'
         )
         self.assertEqual(str(profile), f"{self.user}'s Preferences")
 
     def test_profile_default_subscription(self):
-        profile = UserProfileModel.objects.create(
-            user=self.user, firstname='T', lastname='U', email='t@t.com'
-        )
+        profile = UserProfileModel.objects.create(user=self.user)
         self.assertEqual(profile.subscription_type, 'free')
 
     def test_get_preferred_movies_no_preferences(self):
         """When no preferences set, should return all movies."""
-        profile = UserProfileModel.objects.create(
-            user=self.user, firstname='T', lastname='U', email='t@t.com'
-        )
+        profile = UserProfileModel.objects.create(user=self.user)
         movies = profile.get_preferred_movies()
         self.assertIn(self.movie, movies)
 
     def test_get_preferred_movies_with_preferences(self):
-        profile = UserProfileModel.objects.create(
-            user=self.user, firstname='T', lastname='U', email='t@t.com'
-        )
+        profile = UserProfileModel.objects.create(user=self.user)
         profile.preferred_genres.add(self.genre)
         movies = profile.get_preferred_movies()
         self.assertIn(self.movie, movies)
@@ -422,8 +413,8 @@ class AuthenticationTest(APITestCase):
         self.valid_payload = {
             'username': 'newuser',
             'password': 'StrongPass123!',
-            'firstname': 'New',
-            'lastname': 'User',
+            'first_name': 'New',
+            'last_name': 'User',
             'email': 'newuser@example.com'
         }
 
@@ -538,12 +529,10 @@ class SerializerTest(ModelTestBase):
         self.assertEqual(serializer.data['movie'], 'Test Movie')
 
     def test_user_profile_serializer_fields(self):
-        profile = UserProfileModel.objects.create(
-            user=self.user, firstname='Test', lastname='User', email='t@t.com'
-        )
+        profile = UserProfileModel.objects.create(user=self.user)
         serializer = UserProfileSerializer(profile)
         expected_fields = {
-            'firstname', 'lastname', 'email', 'avatar', 'bio',
+            'id', 'first_name', 'last_name', 'email', 'avatar', 'bio',
             'preferred_genres', 'preferred_actors', 'preferred_movies',
             'date_of_birth', 'location', 'subscription_type'
         }
@@ -775,16 +764,14 @@ class ProfileTest(ModelTestBase):
     def setUp(self):
         super().setUp()
         self.client = APIClient()
-        UserProfileModel.objects.create(
-            user=self.user, firstname='Test', lastname='User', email='t@t.com'
-        )
+        UserProfileModel.objects.create(user=self.user)
 
     def test_get_my_profile_authenticated(self):
         self.client.force_authenticate(user=self.user)
         response = self.client.get('/api/user/me/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['firstname'], 'Test')
-        self.assertEqual(response.data['lastname'], 'User')
+        self.assertEqual(response.data['first_name'], 'Test')
+        self.assertEqual(response.data['last_name'], 'User')
 
     def test_get_my_profile_unauthenticated(self):
         response = self.client.get('/api/user/me/')

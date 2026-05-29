@@ -95,8 +95,8 @@ describe('Nowplaying', () => {
   test('fetches genres and keywords on mount', async () => {
     renderNowplaying();
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/genre/'));
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/keyword/'));
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/genre/'), expect.anything());
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/keyword/'), expect.anything());
     });
   });
 });

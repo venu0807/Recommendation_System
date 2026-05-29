@@ -1,4 +1,3 @@
-/* eslint-disable */
 import React, { useContext, useEffect, useState } from "react";
 import { UserContext } from "../Context";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -38,11 +37,6 @@ const Favorites = () => {
       refreshFavorites();
     }
   }, [user, navigate]);
-
-  // Add this console.log to debug
-  useEffect(() => {
-    console.log("Current favorites:", favorites);
-  }, [favorites]);
 
   if (loading || isUpdating) {
     return (

@@ -8,8 +8,8 @@ describe('EditProfile', () => {
   const defaultUser = {
     username: 'testuser',
     email: 'test@example.com',
-    firstname: 'Test',
-    lastname: 'User',
+    first_name: 'Test',
+    last_name: 'User',
   };
   const defaultPreferences = {
     bio: 'A test bio',
@@ -59,7 +59,7 @@ describe('EditProfile', () => {
   test('handles input change for text fields', () => {
     renderEditProfile();
     const firstNameInput = screen.getByDisplayValue('Test');
-    fireEvent.change(firstNameInput, { target: { name: 'firstname', value: 'Updated' } });
+    fireEvent.change(firstNameInput, { target: { name: 'first_name', value: 'Updated' } });
     expect(firstNameInput.value).toBe('Updated');
   });
 
@@ -75,8 +75,8 @@ describe('EditProfile', () => {
     renderEditProfile();
     fireEvent.click(screen.getByText('Save Changes'));
     expect(mockUpdateProfile).toHaveBeenCalledWith({
-      firstname: 'Test',
-      lastname: 'User',
+      first_name: 'Test',
+      last_name: 'User',
       email: 'test@example.com',
       bio: 'A test bio',
       avatar: null,

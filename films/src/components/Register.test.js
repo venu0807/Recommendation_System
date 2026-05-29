@@ -64,8 +64,8 @@ describe('Register', () => {
     fireEvent.change(screen.getByPlaceholderText('Email'), { target: { name: 'email', value: 'user@test.com' } });
     fireEvent.click(screen.getByText('Next'));
     // Fill step 2
-    fireEvent.change(screen.getByPlaceholderText('First Name'), { target: { name: 'firstname', value: 'New' } });
-    fireEvent.change(screen.getByPlaceholderText('Last Name'), { target: { name: 'lastname', value: 'User' } });
+    fireEvent.change(screen.getByPlaceholderText('First Name'), { target: { name: 'first_name', value: 'New' } });
+    fireEvent.change(screen.getByPlaceholderText('Last Name'), { target: { name: 'last_name', value: 'User' } });
     fireEvent.click(screen.getByText('Next'));
     // Step 3 - submit (query by placeholder since floating labels lack htmlFor/id)
     fireEvent.change(screen.getByPlaceholderText('Password'), { target: { name: 'password', value: 'pass123' } });

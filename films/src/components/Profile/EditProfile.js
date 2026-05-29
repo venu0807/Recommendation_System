@@ -4,8 +4,8 @@ import { UserContext } from '../Context';
 const EditProfile = () => {
   const { user, preferences, updateProfile } = useContext(UserContext);
   const [form, setForm] = useState({
-    firstname: user?.firstname || '',
-    lastname: user?.lastname || '',
+    first_name: user?.first_name || '',
+    last_name: user?.last_name || '',
     email: user?.email || '',
     bio: preferences?.bio || '',
     avatar: null,
@@ -33,11 +33,11 @@ const EditProfile = () => {
       <form onSubmit={handleSubmit}>
         <div className="mb-3">
           <label>First Name</label>
-          <input type="text" name="firstname" value={form.firstname} onChange={handleChange} className="form-control" />
+          <input type="text" name="first_name" value={form.first_name} onChange={handleChange} className="form-control" />
         </div>
         <div className="mb-3">
           <label>Last Name</label>
-          <input type="text" name="lastname" value={form.lastname} onChange={handleChange} className="form-control" />
+          <input type="text" name="last_name" value={form.last_name} onChange={handleChange} className="form-control" />
         </div>
         <div className="mb-3">
           <label>Email</label>

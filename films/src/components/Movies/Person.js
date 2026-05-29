@@ -107,13 +107,14 @@ export default function PersonComponent() {
           {castToDisplay.length > 0 ? (
             castToDisplay.map((castMember) => (
               <Link
+                key={castMember.id}
                 to={`/person/${castMember.member}/${formatTitle(
                   castMember.name
                 )}`}
                 className="link"
                 style={{ textDecoration: "none" }}
               >
-                <div key={castMember.id} className="crew-card mb-3">
+                <div className="crew-card mb-3">
                   <img
                     src={`https://image.tmdb.org/t/p/w500${castMember.profile_path}`}
                     alt={AccountBoxSharpIcon}
@@ -137,13 +138,14 @@ export default function PersonComponent() {
           {crewToDisplay.length > 0 ? (
             crewToDisplay.map((crewMember) => (
               <Link
+                key={crewMember.id}
                 to={`/person/${crewMember.member}/${formatTitle(
                   crewMember.name
                 )}`}
                 className="link text-light"
                 style={{ textDecoration: "none" }}
               >
-                <div key={crewMember.id} className="crew-card mb-3">
+                <div className="crew-card mb-3">
                   <img
                     src={`https://image.tmdb.org/t/p/w500${crewMember.profile_path}`}
                     alt={AccountBoxSharpIcon}

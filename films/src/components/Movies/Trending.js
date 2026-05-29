@@ -6,13 +6,6 @@ import { SkeletonMovieCard } from "../Skeleton";
 export default function Trending() {
   const { trendingMovies, loading, user, preferredMovies, ratedMovies, recommendationLoading } = useContext(UserContext);
 
-  console.log("Trending component state:", {
-    isLoggedIn: !!user,
-    preferredMoviesCount: preferredMovies.length,
-    ratedMoviesCount: ratedMovies.length,
-    trendingMoviesCount: trendingMovies.length
-  });
-
   if (loading || recommendationLoading) {
     return (
       <div className="container-fluid mt-5">
@@ -100,35 +93,12 @@ export default function Trending() {
                     <div className="card-bottom">
                       <b className="card-title text-dark">{movie.release_date}</b>
                     </div>
-                    {/* {movie.recommendation_source && (
-                      <div className="recommendation-details">
-                        {movie.match_score && (
-                          <p className="match-score">Match Score: {movie.match_score}%</p>
-                        )}
-                      </div>
-                    )} */}
                   </div>
                 </Link>
               </div>
             </div>
           ))}
         </div>
-
-        {/* Debug Information (only visible when logged in) */}
-        {user && process.env.NODE_ENV === 'development' && (
-          <div className="row mt-4">
-            <div className="col-12">
-              <div className="card">
-                <div className="card-body">
-                  <h5 className="card-title">Debug Info</h5>
-                  <p>Rated Movies: {ratedMovies.length}</p>
-                  <p>Recommended Movies: {preferredMovies.length}</p>
-                  <p>Using: {preferredMovies.length > 0 ? 'Personalized' : 'Trending'} Movies</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

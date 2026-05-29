@@ -312,7 +312,7 @@ def dynamic_recommendations(user, limit=10):
 
     recommendations = MovieModel.objects.filter(
         Q(genres__name__in = list(preferred_genres)) |
-        Q(actors__name__in = list(preferred_actors))
+        Q(cast__name__in = list(preferred_actors))
     ).exclude(
         id__in=user_ratings.values_list('movie_id', flat=True)
     ).distinct().order_by('-average_rating')[:limit]

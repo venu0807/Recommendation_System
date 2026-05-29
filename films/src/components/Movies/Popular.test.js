@@ -95,14 +95,14 @@ describe('Popular', () => {
   test('fetches genres on mount', async () => {
     renderPopular();
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/genre/'));
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/genre/'), expect.anything());
     });
   });
 
   test('fetches keywords on mount', async () => {
     renderPopular();
     await waitFor(() => {
-      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/keyword/'));
+      expect(global.fetch).toHaveBeenCalledWith(expect.stringContaining('/keyword/'), expect.anything());
     });
   });
 });

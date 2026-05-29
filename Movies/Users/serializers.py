@@ -3,19 +3,41 @@ from django.db.models import Q, Avg
 from .models import *
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    first_name = serializers.CharField(source='user.first_name', required=False)
+    last_name = serializers.CharField(source='user.last_name', required=False)
+    email = serializers.EmailField(source='user.email', required=False)
+
     class Meta:
         model = UserProfileModel
         fields = [
-            'firstname', 'lastname', 'email', 'avatar', 'bio',
+            'id', 'first_name', 'last_name', 'email', 'avatar', 'bio',
             'preferred_genres', 'preferred_actors', 'preferred_movies',
             'date_of_birth', 'location', 'subscription_type'
         ]
 
     def update(self, instance, validated_data):
         """Override the update method to handle the update of user preferences."""
+        user_data = validated_data.pop('user', {})
         
+        # Update User model fields
+        if user_data:
+            user = instance.user
+            if 'first_name' in user_data:
+                user.first_name = user_data['first_name']
+            if 'last_name' in user_data:
+                user.last_name = user_data['last_name']
+            if 'email' in user_data:
+                user.email = user_data['email']
+            user.save()
+        
+        # Update UserProfileModel fields
         instance.preferred_genres = validated_data.get('preferred_genres', instance.preferred_genres)
         instance.preferred_actors = validated_data.get('preferred_actors', instance.preferred_actors)
+        instance.bio = validated_data.get('bio', instance.bio)
+        instance.avatar = validated_data.get('avatar', instance.avatar)
+        instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
+        instance.location = validated_data.get('location', instance.location)
+        instance.subscription_type = validated_data.get('subscription_type', instance.subscription_type)
         instance.save()
         return instance
 

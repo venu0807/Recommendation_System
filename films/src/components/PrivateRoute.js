@@ -6,7 +6,6 @@ const PrivateRoute = ({ children, ...rest }) => {
   const { user } = useContext(UserContext);
 
   if (!user) {
-    console.log("No User Autheticated");
     return <Navigate to="/login" replace />;
   }
 
