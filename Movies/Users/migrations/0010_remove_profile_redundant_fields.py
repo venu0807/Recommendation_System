@@ -4,7 +4,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('Users', '0009_force_superuser'),
+        ('Users', '0007_favoritetvshowsmodel_tvshowreviewmodel_and_more'),
     ]
 
     operations = [

@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useCallback } from "react";
+import React, { createContext, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useMovies } from "../hooks/useMovies";
@@ -14,72 +14,81 @@ export const UserProvider = ({ children }) => {
 
   const { loading } = movies;
 
+  // Refs to hold latest function references without triggering re-renders
+  const moviesRef = useRef(movies);
+  const profileRef = useRef(profile);
+  const authRef = useRef(auth);
+  moviesRef.current = movies;
+  profileRef.current = profile;
+  authRef.current = auth;
+
   /* ---------- Token refresh + initial load ---------- */
 
-  const isLocalhost =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1";
-
   // Fetch initial data on mount
-  const fetchDataCallback = useCallback(movies.fetchData, [isLocalhost]);
+  const fetchDataCallback = useCallback(() => {
+    moviesRef.current.fetchData();
+  }, []);
   useEffect(() => {
     fetchDataCallback();
 
     const timeoutId = setTimeout(() => {
       if (loading) {
         console.warn("Setting loading to false due to timeout fallback");
-        movies.setLoading(false);
+        moviesRef.current.setLoading(false);
       }
     }, 30000);
 
     return () => clearTimeout(timeoutId);
-  }, [fetchDataCallback, loading, movies.setLoading]);
+  }, [fetchDataCallback, loading]);
 
   // Fetch favorites when user logs in
-  const fetchFavoritesCallback = useCallback(profile.fetchFavorites, [auth.authTokens]);
+  const fetchFavoritesCallback = useCallback(() => {
+    profileRef.current.fetchFavorites();
+  }, []);
   useEffect(() => {
-    if (auth.authTokens) {
+    if (authRef.current.authTokens) {
       fetchFavoritesCallback();
     }
   }, [auth.authTokens, fetchFavoritesCallback]);
 
   // Fetch watchlist when user logs in
-  const fetchWatchlistCallback = useCallback(profile.fetchWatchlist, [auth.authTokens]);
+  const fetchWatchlistCallback = useCallback(() => {
+    profileRef.current.fetchWatchlist();
+  }, []);
   useEffect(() => {
-    if (auth.authTokens) {
+    if (authRef.current.authTokens) {
       fetchWatchlistCallback();
     }
   }, [auth.authTokens, fetchWatchlistCallback]);
 
   // Fetch personalized movies when user logs in
-  const fetchPersonalizedMoviesCallback = useCallback(
-    movies.fetchPersonalizedMovies,
-    [auth.authTokens]
-  );
+  const fetchPersonalizedMoviesCallback = useCallback(() => {
+    moviesRef.current.fetchPersonalizedMovies();
+  }, []);
   useEffect(() => {
-    if (auth.authTokens) {
+    if (authRef.current.authTokens) {
       fetchPersonalizedMoviesCallback();
     }
   }, [auth.authTokens, fetchPersonalizedMoviesCallback]);
 
   // Fetch user profile on app load if tokens exist
   useEffect(() => {
-    if (auth.authTokens) {
-      auth.fetchUserProfile();
+    if (authRef.current.authTokens) {
+      authRef.current.fetchUserProfile();
     }
   }, [auth.authTokens]);
 
   // Fetch TV shows
   useEffect(() => {
-    movies.fetchTvShows();
+    moviesRef.current.fetchTvShows();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // WebSocket for real-time recommendations
   useEffect(() => {
-    return profile.connectWebSocket(auth.user, (recommendations) => {
-      movies.setPreferredMovies(recommendations);
-      profile.setRecommendationLoading(false);
-      profile.addNotification("Recommendations updated in real time!", "info");
+    return profileRef.current.connectWebSocket(authRef.current.user, (recommendations) => {
+      moviesRef.current.setPreferredMovies(recommendations);
+      profileRef.current.setRecommendationLoading(false);
+      profileRef.current.addNotification("Recommendations updated in real time!", "info");
     });
   }, [auth.user]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -89,15 +98,15 @@ export const UserProvider = ({ children }) => {
     let intervalId;
 
     const refreshToken = async () => {
-      if (!isMounted || !auth.authTokens?.refresh) return;
+      if (!isMounted || !authRef.current.authTokens?.refresh) return;
       try {
-        await auth.updateToken();
+        await authRef.current.updateToken();
       } catch (error) {
         console.error("Token refresh failed:", error);
       }
     };
 
-    if (loading && auth.authTokens?.refresh) {
+    if (loading && authRef.current.authTokens?.refresh) {
       refreshToken();
     }
 
@@ -169,28 +178,10 @@ export const UserProvider = ({ children }) => {
       addNotInterestedMovie: profile.addNotInterestedMovie,
     }),
     [
-      auth.authTokens,
-      auth.user,
-      auth.updateProfile,
-      movies.movies,
-      movies.upcomingMovies,
-      movies.nowplayingMovies,
-      movies.trendingMovies,
-      movies.topratedMovies,
-      movies.preferredMovies,
-      movies.ratedMovies,
-      movies.cast,
-      movies.tvShowsPopular,
-      movies.tvShowsTopRated,
-      movies.tvShowsOnAir,
+      auth,
+      movies,
+      profile,
       loading,
-      profile.recommendationLoading,
-      profile.favorites,
-      profile.watchlist,
-      profile.notifications,
-      profile.watchHistory,
-      profile.searchHistory,
-      profile.preferences,
     ]
   );
 

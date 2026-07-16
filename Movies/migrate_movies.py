@@ -1,15 +1,16 @@
+import os
 import MySQLdb
 import psycopg2
 from datetime import datetime
 
-# Local MySQL Database (Docker)
-MYSQL_DB = "movies"
-MYSQL_USER = "root"
-MYSQL_PASS = "rootpassword"
-MYSQL_HOST = "db" # since this script will run inside the backend container
+# Use env vars for all credentials — never hardcode database URLs.
+MYSQL_DB = os.environ.get("MYSQL_DB", "movies")
+MYSQL_USER = os.environ.get("MYSQL_USER", "root")
+MYSQL_PASS = os.environ.get("MYSQL_PASS", "rootpassword")
+MYSQL_HOST = os.environ.get("MYSQL_HOST", "db")
 
 # Remote Neon PostgreSQL Database
-NEON_URL = "postgresql://neondb_owner:npg_m95UHRDQrluh@ep-twilight-flower-aqd4qwps.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require"
+NEON_URL = os.environ.get("NEON_DATABASE_URL")
 
 def migrate():
     print("Connecting to local MySQL...")
@@ -18,6 +19,10 @@ def migrate():
         mysql_cur = mysql_conn.cursor()
     except Exception as e:
         print(f"Failed to connect to MySQL: {e}")
+        return
+
+    if not NEON_URL:
+        print("NEON_DATABASE_URL not set — skipping Neon migration.")
         return
 
     print("Connecting to remote Neon DB...")

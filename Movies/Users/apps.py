@@ -6,4 +6,6 @@ class UsersConfig(AppConfig):
     name = 'Users'
 
     def ready(self):
+        # Register drf-spectacular authentication extension
+        # This is done via SPECTACULAR_SETTINGS['AUTHENTICATION_EXTENSIONS'] in settings.py
         pass

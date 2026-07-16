@@ -1,6 +1,6 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useCallback } from "react";
 import { UserContext } from "../Context";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { SkeletonMovieCard } from '../Skeleton';
 import API_BASE_URL from '../../config';
 
@@ -9,7 +9,7 @@ const Favorites = () => {
   const [isUpdating, setIsUpdating] = useState(false);
   const navigate = useNavigate();
 
-  const refreshFavorites = async () => {
+  const refreshFavorites = useCallback(async () => {
     if (!authTokens) return;
     setIsUpdating(true);
     try {
@@ -28,7 +28,7 @@ const Favorites = () => {
     } finally {
       setIsUpdating(false);
     }
-  };
+  }, [authTokens, setFavorites]);
 
   useEffect(() => {
     if (!user) {
@@ -36,7 +36,7 @@ const Favorites = () => {
     } else {
       refreshFavorites();
     }
-  }, [user, navigate]);
+  }, [user, navigate, refreshFavorites]);
 
   if (loading || isUpdating) {
     return (

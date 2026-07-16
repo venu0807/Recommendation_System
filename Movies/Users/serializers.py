@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.db.models import Q, Avg
+from drf_spectacular.utils import extend_schema_field
 from .models import *
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -31,8 +32,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
             user.save()
         
         # Update UserProfileModel fields
-        instance.preferred_genres = validated_data.get('preferred_genres', instance.preferred_genres)
-        instance.preferred_actors = validated_data.get('preferred_actors', instance.preferred_actors)
+        if 'preferred_genres' in validated_data:
+            instance.preferred_genres.set(validated_data['preferred_genres'])
+        if 'preferred_actors' in validated_data:
+            instance.preferred_actors.set(validated_data['preferred_actors'])
         instance.bio = validated_data.get('bio', instance.bio)
         instance.avatar = validated_data.get('avatar', instance.avatar)
         instance.date_of_birth = validated_data.get('date_of_birth', instance.date_of_birth)
@@ -67,6 +70,7 @@ class GenreSerializer(serializers.ModelSerializer):
         model = GenreModel
         fields = '__all__'
 
+    @extend_schema_field(serializers.URLField)
     def get_tmdb_url(self, obj):
         """Return the TMDB URL for the genre."""
         return f"https://www.themoviedb.org/genre/{obj.tmdb_id}"
@@ -86,6 +90,7 @@ class KeywordSerializer(serializers.ModelSerializer):
         model = KeywordModel
         fields = '__all__'
 
+    @extend_schema_field(serializers.URLField)
     def get_tmdb_url(self, obj):
         return f"https://www.themoviedb.org/keyword/{obj.tmdb_id}"
 
@@ -97,6 +102,7 @@ class ProductionCompanySerializer(serializers.ModelSerializer):
         model = ProductionCompanyModel
         fields = '__all__'
 
+    @extend_schema_field(serializers.URLField)
     def get_tmdb_url(self, obj):
         return f"https://www.themoviedb.org/company/{obj.tmdb_id}"
 
@@ -116,21 +122,23 @@ class MovieSerializer(serializers.ModelSerializer):
         model = MovieModel
         fields = '__all__'
 
+    @extend_schema_field(serializers.DecimalField(max_digits=4, decimal_places=2))
     def get_average_rating(self, obj):
         """Get the average rating for the movie."""
         if hasattr(obj, 'annotated_average_rating') and obj.annotated_average_rating is not None:
             return round(obj.annotated_average_rating, 2)
-            
+
         avg_rating = RatingModel.objects.filter(movie=obj).aggregate(Avg('rating'))['rating__avg']
         return round(avg_rating, 2) if avg_rating else None
 
+    @extend_schema_field(serializers.URLField)
     def get_tmdb_url(self, obj):
         """Return the TMDB URL for the movie."""
         return f"https://www.themoviedb.org/movie/{obj.tmdb_id}"
 
     def get_imdb_url(self, obj):
         """Return the IMDb URL if an IMDb ID is available."""
-        return f"https://www.imdb.com/title/{obj.keywords.get('imdb_id')}" if obj.keywords.get('imdb_id') else None
+        return f"https://www.imdb.com/title/{obj.imdb_id}" if obj.imdb_id else None
 
 
 

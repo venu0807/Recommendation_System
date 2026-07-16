@@ -17,8 +17,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView, SpectacularRedocView
+from Movies.health import health_check
 
 urlpatterns = [
+    path('api/health/', health_check, name='health_check'),
     path('', include("Users.urls")),
     path('admin/', admin.site.urls),
     # OpenAPI schema endpoint

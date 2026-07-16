@@ -22,7 +22,11 @@ class MediaModel(models.Model):
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        target = self.movie.title if self.movie else (self.tv_show.name if self.tv_show else "Unknown")
+        target = "Unknown"
+        if self.movie_id and self.movie:
+            target = self.movie.title
+        elif self.tv_show_id and self.tv_show:
+            target = self.tv_show.name
         return f"{self.media_type} for {target}"
 
 
@@ -104,16 +108,14 @@ class UserProfileModel(models.Model):
         return f"{self.user}'s Preferences"
     
     def get_preferred_movies(self):
-        preferred_movies = MovieModel.objects.filter(
+        if not self.preferred_genres.exists() and not self.preferred_actors.exists():
+            return MovieModel.objects.none()
+
+        return MovieModel.objects.filter(
             Q(id__in=self.preferred_movies.all()) |
             Q(genres__in=self.preferred_genres.all()) |
             Q(cast__member__in=self.preferred_actors.all())
         ).distinct()
-
-        if not self.preferred_genres.exists() and not self.preferred_actors.exists():
-            preferred_movies = MovieModel.objects.all()
-
-        return preferred_movies
 
 
 class GenreModel(models.Model):

@@ -16,6 +16,7 @@ channels==4.3.2
 channels-redis==4.3.0
 daphne
 redis==7.4.0
+celery==5.4.0
 
 # ── Data Science / ML ──
 pandas==3.0.3
@@ -29,10 +30,13 @@ drf-spectacular-sidecar==2026.5.1
 
 # ── Utilities ──
 python-dotenv==1.2.2
+python-decouple==3.8
+dj-database-url==0.5.0
 whitenoise==6.12.0
 sentry-sdk==2.60.0
 pillow==12.2.0
 PyYAML==6.0.3
+django-redis==5.7.0
 
 # ── Production (Linux-only; not needed on Windows) ──
 gunicorn==23.0.0

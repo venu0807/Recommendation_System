@@ -47,6 +47,7 @@ import re
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import cache_page
 from .services import get_search_results
+from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
 
 logger = logging.getLogger(__name__)
 
@@ -509,12 +510,6 @@ class ProductionCompanyViewSet(viewsets.ModelViewSet):
         serializer = MovieSerializer(movies, many=True)
         return Response(serializer.data)
 
-    @action(detail=False, methods=['get'])
-    def oldest(self, request):
-        """Get the oldest production companies."""
-        oldest_companies = ProductionCompanyModel.objects.order_by('foundation_year')[:10]
-        serializer = self.get_serializer(oldest_companies, many=True)
-        return Response(serializer.data)
 
 
 
@@ -593,7 +588,7 @@ class GenreViewSet(viewsets.ModelViewSet):
 
 
 class FeedbackViewSet(viewsets.ModelViewSet):
-    queryset = RatingModel.objects.all()
+    queryset = FeedbackModel.objects.all()
     serializer_class = RatingSerializer
     permission_classes = [IsAuthenticated]
     def post(self, request):
@@ -664,6 +659,9 @@ class FavoriteViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(favorites, many=True)
         return Response(serializer.data)
 
+@extend_schema(
+    responses={200: UserProfileSerializer, 404: None},
+)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_my_profile(request):
@@ -679,6 +677,10 @@ class TVShowRatingViewSet(viewsets.ModelViewSet):
     serializer_class = TVShowRatingSerializer
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        request=TVShowRatingSerializer,
+        responses={200: TVShowRatingSerializer}
+    )
     @action(detail=False, methods=['post'])
     def rate(self, request):
         user = request.user
@@ -712,6 +714,10 @@ class FavoriteTVShowsViewSet(viewsets.ModelViewSet):
     def get_queryset(self):
         return FavoriteTVShowsModel.objects.filter(user=self.request.user, is_active=True).select_related('tv_show')
 
+    @extend_schema(
+        request=FavoriteTVShowsSerializer,
+        responses={201: FavoriteTVShowsSerializer}
+    )
     @action(detail=False, methods=['post'])
     def add(self, request):
         tv_show_id = request.data.get('tv_show_id')
@@ -854,9 +860,16 @@ class KeywordViewSet(viewsets.ModelViewSet):
 
 import subprocess
 import sys
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 
+@extend_schema(
+    responses={
+        200: OpenApiResponse(description='Seeding started'),
+        400: OpenApiResponse(description='Error starting process'),
+    },
+)
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def trigger_seed(request):
     try:
         log_file = open('/app/seed_log.txt', 'w')
@@ -865,6 +878,11 @@ def trigger_seed(request):
         return JsonResponse({'status': f'Error starting process: {e}'})
     return JsonResponse({'status': 'Database seeding started! Check /seed-status/ for progress.'})
 
+@extend_schema(
+    responses={
+        200: OpenApiResponse(description='Seed status log'),
+    },
+)
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def seed_status(request):
