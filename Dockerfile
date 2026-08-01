@@ -41,7 +41,8 @@ WORKDIR /app
 
 # Copy application code
 COPY --chown=django:django Movies/ ./Movies/
-COPY --chown=django:django manage.py .
+# manage.py lives inside Movies/ (project package dir)
+COPY --chown=django:django Movies/manage.py ./Movies/manage.py
 
 # Static files directory
 RUN mkdir -p /app/staticfiles /app/mediafiles && chown -R django:django /app

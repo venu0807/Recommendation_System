@@ -98,3 +98,10 @@ Movie_Recommandation.txt
 
 # Django test database (generated in-memory but may leave artifacts)
 test_db*
+
+
+# Secrets
+.env*
+*.pem
+*.key
+secret.yaml

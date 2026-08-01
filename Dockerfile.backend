@@ -19,7 +19,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY Movies/ ./Movies/
-COPY manage.py .
+# manage.py lives inside Movies/ (project package dir)
+COPY Movies/manage.py ./Movies/manage.py
 
 # Collect static files
 RUN mkdir -p /app/staticfiles && chown -R appuser:appuser /app
