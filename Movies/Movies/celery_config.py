@@ -2,11 +2,8 @@ import os
 from celery.schedules import crontab
 
 # Celery Configuration
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL') or os.environ.get('REDIS_URL')
-CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND') or os.environ.get('REDIS_URL')
-
-if not CELERY_BROKER_URL:
-    raise RuntimeError('CELERY_BROKER_URL or REDIS_URL environment variable is required for Celery')
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL') or os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND') or os.environ.get('REDIS_URL') or 'redis://localhost:6379/0'
 
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
