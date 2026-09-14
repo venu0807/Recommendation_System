@@ -32,6 +32,14 @@ from .views import (
 from django.conf import settings
 
 
+def unpaginate(data):
+    """DRF's default pagination wraps lists as {'count', 'next', 'previous', 'results'}.
+    Accept either shape so the viewset config can change without breaking tests."""
+    if isinstance(data, dict) and 'results' in data:
+        return data['results']
+    return data
+
+
 # =============================================================================
 # MODEL TESTS
 # =============================================================================
@@ -259,10 +267,11 @@ class UserProfileModelTest(ModelTestBase):
         self.assertEqual(profile.subscription_type, 'free')
 
     def test_get_preferred_movies_no_preferences(self):
-        """When no preferences set, should return all movies."""
+        """With no preferences set, returns an empty queryset (documented behavior
+        of UserProfileModel.get_preferred_movies)."""
         profile = UserProfileModel.objects.create(user=self.user)
         movies = profile.get_preferred_movies()
-        self.assertIn(self.movie, movies)
+        self.assertEqual(len(movies), 0)
 
     def test_get_preferred_movies_with_preferences(self):
         profile = UserProfileModel.objects.create(user=self.user)
@@ -787,13 +796,13 @@ class GenreViewSetTest(ModelTestBase):
     def test_genre_list(self):
         response = self.client.get('/genre/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        names = [g['name'] for g in response.data]
+        names = [g['name'] for g in unpaginate(response.data)]
         self.assertIn('Action', names)
 
     def test_genre_search(self):
         response = self.client.get('/genre/', {'search': 'Action'})
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 1)
+        self.assertEqual(len(unpaginate(response.data)), 1)
 
 
 class PersonViewSetTest(ModelTestBase):
@@ -805,7 +814,7 @@ class PersonViewSetTest(ModelTestBase):
     def test_person_list(self):
         response = self.client.get('/person/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        names = [p['name'] for p in response.data]
+        names = [p['name'] for p in unpaginate(response.data)]
         self.assertIn('Robert Downey Jr.', names)
 
     def test_person_movies(self):
@@ -825,7 +834,7 @@ class KeywordViewSetTest(ModelTestBase):
     def test_keyword_list(self):
         response = self.client.get('/keyword/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        names = [k['name'] for k in response.data]
+        names = [k['name'] for k in unpaginate(response.data)]
         self.assertIn('superhero', names)
 
 

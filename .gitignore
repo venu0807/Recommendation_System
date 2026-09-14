@@ -105,3 +105,4 @@ test_db*
 *.pem
 *.key
 secret.yaml
+.venv*/

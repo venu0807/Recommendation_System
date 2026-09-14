@@ -10,6 +10,11 @@ jobs:
   backend-validation:
     name: Django Backend Validation
     runs-on: ubuntu-latest
+    env:
+      SECRET_KEY: ci-secret-key-for-testing-only
+      DEBUG: "True"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,testserver"
+      TMDB_API_KEY: ci-dummy-key
     steps:
       - uses: actions/checkout@v4
 
@@ -17,14 +22,21 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+          cache: pip
 
-      - name: Validate Python Syntax
-        run: |
-          python -m compileall -q Movies/
-          echo "✅ Django backend compiled successfully."
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Django system checks
+        working-directory: Movies
+        run: python manage.py check
+
+      - name: Run Django test suite
+        working-directory: Movies
+        run: python manage.py test --verbosity 2
 
   frontend-build:
-    name: React Frontend Build
+    name: React Frontend Build & Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -33,11 +45,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: npm
+          cache-dependency-path: films/package-lock.json
 
-      - name: Install dependencies & Build
+      - name: Install dependencies
+        working-directory: films
+        run: npm ci
+
+      - name: Run frontend tests
         working-directory: films
         env:
-          CI: "false"
-        run: |
-          npm install
-          npm run build
+          CI: "true"
+        run: npm test -- --watchAll=false
+
+      - name: Build production bundle
+        working-directory: films
+        run: npm run build
