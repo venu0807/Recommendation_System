@@ -18,9 +18,40 @@ import API_BASE_URL from "../config";
  *   updateProfile: Function,
  * }}
  */
+const TOKENS_STORAGE_KEY = "authTokens";
+
+// Restores the session across page reloads (Netflix-style "stay logged in").
+const readStoredTokens = () => {
+  try {
+    const raw = localStorage.getItem(TOKENS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
 export function useAuth(navigate) {
-  const [authTokens, setAuthTokens] = useState(null);
-  const [user, setUser] = useState(null);
+  // Initialize from localStorage so refreshes/direct URLs keep the session.
+  const [authTokens, setAuthTokensState] = useState(readStoredTokens);
+  const [user, setUser] = useState(() => {
+    const stored = readStoredTokens();
+    try {
+      return stored?.access ? jwtDecode(stored.access) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Persist tokens whenever they change; clear on logout.
+  const setAuthTokens = (tokens) => {
+    setAuthTokensState(tokens);
+    try {
+      if (tokens) localStorage.setItem(TOKENS_STORAGE_KEY, JSON.stringify(tokens));
+      else localStorage.removeItem(TOKENS_STORAGE_KEY);
+    } catch {
+      // Storage unavailable (private mode etc.) — session just won't persist.
+    }
+  };
 
   const fetchUserProfile = async () => {
     if (!authTokens?.access) return;

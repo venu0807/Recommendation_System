@@ -62,14 +62,15 @@ export default function TvShowDetail() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setIsWatchlisted(data.some((item) => item.tv_show === show?.name));
+        const list = Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
+        setIsWatchlisted(list.some((item) => item.tv_show === show?.name));
       });
     // Fetch reviews
                    fetch(`${API_BASE_URL}/tvshow-review/?tv_show_id=${id}`, {
       headers: { Authorization: `Bearer ${authTokens.access}` },
     })
       .then((res) => res.json())
-      .then(setReviews);
+      .then((data) => setReviews(Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : []));
   }, [user, authTokens, show, id]);
 
   const handleRatingSubmit = async () => {

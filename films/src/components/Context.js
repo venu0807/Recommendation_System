@@ -63,7 +63,12 @@ export const UserProvider = ({ children }) => {
 
   // Fetch personalized movies when user logs in
   const fetchPersonalizedMoviesCallback = useCallback(() => {
-    moviesRef.current.fetchPersonalizedMovies();
+    // Clear the "Updating recommendations..." spinner once the HTTP fetch
+    // settles — previously it only cleared on a WebSocket push, leaving the
+    // flag stuck when the socket never delivers.
+    Promise.resolve(moviesRef.current.fetchPersonalizedMovies()).finally(() => {
+      profileRef.current.setRecommendationLoading(false);
+    });
   }, []);
   useEffect(() => {
     if (authRef.current.authTokens) {
@@ -85,11 +90,15 @@ export const UserProvider = ({ children }) => {
 
   // WebSocket for real-time recommendations
   useEffect(() => {
-    return profileRef.current.connectWebSocket(authRef.current.user, (recommendations) => {
-      moviesRef.current.setPreferredMovies(recommendations);
-      profileRef.current.setRecommendationLoading(false);
-      profileRef.current.addNotification("Recommendations updated in real time!", "info");
-    });
+    return profileRef.current.connectWebSocket(
+      authRef.current.user,
+      (recommendations) => {
+        moviesRef.current.setPreferredMovies(recommendations);
+        profileRef.current.setRecommendationLoading(false);
+        profileRef.current.addNotification("Recommendations updated in real time!", "info");
+      },
+      authRef.current.authTokens?.access
+    );
   }, [auth.user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Token refresh logic

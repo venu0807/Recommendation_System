@@ -13,10 +13,13 @@ from channels.routing import ProtocolTypeRouter, URLRouter
 from channels.auth import AuthMiddlewareStack
 from django.core.asgi import get_asgi_application
 from django.urls import path
-from Users.consumers import RecommendationConsumer
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'Movies.settings')
 django.setup()
+
+# Import consumers AFTER django.setup() — models aren't ready before that,
+# which crashes ASGI servers (daphne/uvicorn) with AppRegistryNotReady.
+from Users.consumers import RecommendationConsumer
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),

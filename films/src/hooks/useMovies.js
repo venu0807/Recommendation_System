@@ -192,14 +192,17 @@ export function useMovies(authTokens) {
 
   const fetchTvShows = async () => {
     try {
+      // TV endpoints return DRF paginated envelopes ({count, results});
+      // components expect plain arrays.
+      const toList = (d) => (Array.isArray(d) ? d : Array.isArray(d?.results) ? d.results : []);
       const [popularRes, topRatedRes, onAirRes] = await Promise.all([
         fetch(`${API_BASE_URL}/tv/popular/`),
         fetch(`${API_BASE_URL}/tv/top_rated/`),
         fetch(`${API_BASE_URL}/tv/on_air/`),
       ]);
-      if (popularRes.ok) setTvShowsPopular(await popularRes.json());
-      if (topRatedRes.ok) setTvShowsTopRated(await topRatedRes.json());
-      if (onAirRes.ok) setTvShowsOnAir(await onAirRes.json());
+      if (popularRes.ok) setTvShowsPopular(toList(await popularRes.json()));
+      if (topRatedRes.ok) setTvShowsTopRated(toList(await topRatedRes.json()));
+      if (onAirRes.ok) setTvShowsOnAir(toList(await onAirRes.json()));
     } catch (error) {
       console.error('Error fetching TV shows:', error);
     }

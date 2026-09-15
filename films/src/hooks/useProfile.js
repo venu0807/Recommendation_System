@@ -242,10 +242,14 @@ export function useProfile(authTokens, navigate) {
   // WebSocket connection for real-time recommendations
   // Note: user dependency is passed from Context.js
   const connectWebSocket = useCallback(
-    (user, onRecommendations) => {
+    (user, onRecommendations, token = null) => {
       if (!user) return;
       const wsBase = API_BASE_URL.replace(/^http/, "ws");
-      const wsUrl = `${wsBase}/ws/recommendations/`;
+      // Browsers can't set Authorization headers on a WS handshake —
+      // the backend authenticates via ?token= <JWT access token>.
+      const wsUrl = token
+        ? `${wsBase}/ws/recommendations/?token=${encodeURIComponent(token)}`
+        : `${wsBase}/ws/recommendations/`;
       wsRef.current = new window.WebSocket(wsUrl);
 
       wsRef.current.onopen = () => {};
