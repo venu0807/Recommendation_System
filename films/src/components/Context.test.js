@@ -52,6 +52,7 @@ const TestConsumer = () => {
 
 describe('UserProvider Context Regression Suite', () => {
   beforeEach(() => {
+    localStorage.clear();
     global.fetch = jest.fn();
     jest.clearAllMocks();
   });

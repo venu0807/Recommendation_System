@@ -81,7 +81,7 @@ export function useProfile(authTokens, navigate) {
   }, [authTokens]);
 
   const addToFavorites = async (movieId) => {
-    if (!authTokens) {
+    if (!authTokens?.access) {
       addNotification("Please login to add favorites", "warning");
       navigate("/login");
       return false;
