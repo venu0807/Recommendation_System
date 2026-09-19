@@ -70,7 +70,7 @@ def clear_user_recommendations_cache(user_id, cache_sizes=None):
 def _compute_user_recommendations(user_id, num_recommendations=10):
     try:
         logger.info(f"Starting recommendations for user_id: {user_id}")
-        
+
         # Get user's ratings
         user_ratings = RatingModel.objects.filter(user__username=user_id)
         logger.info(f"Found {user_ratings.count()} ratings for user {user_id}")
@@ -94,7 +94,7 @@ def _compute_user_recommendations(user_id, num_recommendations=10):
         highest_rated = user_ratings.order_by('-rating').first()
         highest_rated_movie = highest_rated.movie
         rated_movie_ids = set(user_ratings.values_list('movie_id', flat=True))
-        
+
         logger.info(f"Highest rated movie: {highest_rated_movie.title} ({highest_rated.rating})")
         logger.info(f"Language: {highest_rated_movie.original_language}")
         logger.info(f"Genres: {[g.name for g in highest_rated_movie.genres.all()]}")
@@ -111,7 +111,7 @@ def _compute_user_recommendations(user_id, num_recommendations=10):
         ).annotate(
             genre_match=Count('genres', filter=Q(genres__in=highest_rated_movie.genres.all()))
         ).order_by('-genre_match', '-vote_average')[:5]
-        
+
         # Add recommendations with source information
         for movie in primary_recs:
             recommendations.append({
@@ -134,7 +134,7 @@ def _compute_user_recommendations(user_id, num_recommendations=10):
             ).filter(
                 genre_match__gte=2  # Must match at least 2 genres
             ).order_by('-genre_match', '-vote_average')[:3]
-            
+
             # Add recommendations with source information
             for similar_movie in similar_movies:
                 recommendations.append({
@@ -157,7 +157,7 @@ def _compute_user_recommendations(user_id, num_recommendations=10):
             ).filter(
                 genre_match__gte=1  # Must match at least one genre
             ).order_by('-genre_match', '-vote_average')[:remaining]
-            
+
             # Add recommendations with source information
             for movie in genre_recs:
                 recommendations.append({
@@ -210,7 +210,7 @@ def _compute_user_recommendations(user_id, num_recommendations=10):
 # ──────────────────────────────────────────────
 
 def _get_tfidf_matrix():
-    """Build or retrieve cached TF-IDF cosine similarity matrix and movie IDs."""
+    """Build or retrieve cached TF-IDF matrix and movie IDs."""
     cache_key = 'tfidf_matrix_data'
     cached = cache.get(cache_key)
     if cached is not None:
@@ -231,11 +231,10 @@ def _get_tfidf_matrix():
 
     tfidf = TfidfVectorizer(stop_words='english')
     tfidf_matrix = tfidf.fit_transform(features)
-    cosine_sim = cosine_similarity(tfidf_matrix, tfidf_matrix)
 
-    cache.set(cache_key, {'matrix': cosine_sim, 'movie_ids': movie_ids}, TFIDF_CACHE_TTL)
+    cache.set(cache_key, {'matrix': tfidf_matrix, 'movie_ids': movie_ids}, TFIDF_CACHE_TTL)
     logger.info(f"Cached TF-IDF matrix for {len(movie_ids)} movies")
-    return cosine_sim, movie_ids
+    return tfidf_matrix, movie_ids
 
 
 def clear_tfidf_cache():
@@ -252,8 +251,8 @@ def get_movie_recommendations(movie_id, num_recommendations=10):
         logger.info(f"Cache hit for movie {movie_id}")
         return MovieModel.objects.filter(id__in=cached)
 
-    cosine_sim, movie_ids = _get_tfidf_matrix()
-    if cosine_sim is None:
+    tfidf_matrix, movie_ids = _get_tfidf_matrix()
+    if tfidf_matrix is None:
         return MovieModel.objects.none()
 
     try:
@@ -262,7 +261,9 @@ def get_movie_recommendations(movie_id, num_recommendations=10):
         logger.warning(f"Movie {movie_id} not found in TF-IDF matrix")
         return MovieModel.objects.none()
 
-    sim_scores = list(enumerate(cosine_sim[movie_idx]))
+    cosine_sim = cosine_similarity(tfidf_matrix[movie_idx], tfidf_matrix).flatten()
+
+    sim_scores = list(enumerate(cosine_sim))
     sim_scores = sorted(sim_scores, key=lambda x: x[1], reverse=True)
     rec_ids = [movie_ids[i[0]] for i in sim_scores[1:num_recommendations + 1]]
 
@@ -274,7 +275,7 @@ def hybrid_recommendations(user_id, movie_id=None, num_recommendations=10):
     logger.info(f"Generating hybrid recommendations for user_id: {user_id}, movie_id: {movie_id}")
     # Get user-based recommendations (Collaborative Filtering)
     user_recommendations = get_user_recommendations(user_id, num_recommendations)
-    
+
     # Get movie-based recommendations (Content-Based Filtering)
     movie_recommendations = get_movie_recommendations(movie_id, num_recommendations) if movie_id else []
 
