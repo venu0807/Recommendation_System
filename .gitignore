@@ -95,6 +95,7 @@ migrate_movies.py
 tmdb_test.json
 local_db.json
 Movie_Recommandation.txt
+Notes.md
 
 # Django test database (generated in-memory but may leave artifacts)
 test_db*
